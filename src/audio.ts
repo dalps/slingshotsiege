@@ -139,7 +139,8 @@ const S = E / 2;
 const T = S / 2;
 
 const kick = generateNotes(mul(sin, decay(64)), 0.5, 0.5);
-const syn = generateNotes(mul(sin, decay(4)), 1, 1);
+const syn = generateNotes(mul(sin, decay(32)), 1, 1);
+const syn2 = generateNotes(mul(sin, decay(8)), 1, 1);
 
 export function playSynth() {
   playSound(syn.a4, 0, audioContext.destination);
@@ -181,9 +182,16 @@ const M2 = [
   [syn.g5, 2 * H + 2 * Q],
 ];
 
-const triplets = (arr: AudioBuffer[]) =>
+type Note = AudioBuffer;
+type Duration = number;
+
+const triplets = (arr: Note[]) =>
   arr.map((note, i) => [note, Math.floor(i / 3) * W + (i % 3) * P]);
 
+const quarters = (arr: (Note | undefined)[]) =>
+  arr.flatMap((note, i) =>
+    note ? [[note, Math.floor(i / 4) * W + (i % 4) * Q]] : [],
+  );
 const M3 = [
   ...triplets([
     syn.e4,
@@ -275,7 +283,125 @@ const M3 = [
   [syn.fs5, 14 * W],
   [syn.b5, 15 * W],
 ];
+const M4_a = [
+  syn.g4,
+  syn.b4,
+  syn.e4,
+  syn.b4,
+
+  syn.d4,
+  syn.d5,
+  syn.g4,
+  syn.d5,
+
+  syn.gs4,
+  syn.d5,
+  syn.e4,
+  syn.d5,
+
+  syn.a4,
+  syn.c5,
+  syn.g4,
+  syn.ds5,
+
+  syn.fs4,
+  syn2.d4,
+  syn2.e4,
+  syn2.fs4,
+
+  syn2.g4,
+];
+
+const M4_b = [
+  syn.d5,
+  ,
+  syn.g5,
+  syn.g5,
+
+  syn2.a5,
+  ,
+  syn2.b5,
+  ,
+  syn2.e6,
+  ,
+  syn.b5,
+  syn.e6,
+
+  syn.c6,
+  syn.e6,
+  syn.a5,
+  ,
+  syn2.d6,
+  ,
+  syn2.cs6,
+  syn2.c6,
+
+  syn2.b5,
+];
+
+const M4 = [
+  ...quarters([
+    ...M4_a,
+    syn2.d5,
+    syn.b4,
+    syn.g4,
+
+    syn.c5,
+    syn.e5,
+    syn.cs5,
+    syn.e5,
+
+    syn.d5,
+    syn.a4,
+    syn.fs4,
+    syn.d4,
+
+    ...M4_a,
+    syn.b5,
+    syn.g5,
+    syn.e5,
+
+    syn.c5,
+    syn.a4,
+    syn.fs4,
+    syn.d4,
+
+    ,
+    syn.d4,
+    syn.g4,
+    ,
+  ]),
+
+  ...quarters([
+    ...M4_b,
+    ,
+    syn2.d6,
+    ,
+    syn.a5,
+    syn.b5,
+    syn.a5,
+    syn.g5,
+
+    syn.fs5,
+    syn.a5,
+    syn.d5,
+    ,
+    ...M4_b,
+    syn.d6,
+    syn.b5,
+    syn.g5,
+
+    syn.e5,
+    syn.c5,
+    syn.a4,
+    syn.b4,
+
+    syn2.a4,
+    ,
+    syn2.g4,
+  ]),
+];
 
 export function playMelody() {
-  playSoundArray(audioContext.destination)(M3);
+  playSoundArray(audioContext.destination)(M4);
 }
