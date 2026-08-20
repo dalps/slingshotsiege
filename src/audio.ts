@@ -9,6 +9,10 @@ function toFreq(note: number) {
   return Math.pow(2, (note - 69) / 12) * 440;
 }
 
+//////////////////////////////
+// Playback
+//////////////////////////////
+
 function playSound(
   sound: AudioBuffer,
   delay?: number,
@@ -62,7 +66,7 @@ function toNoteString(note: number) {
 
 /** For a given instrument, generates an object containing all notes indexed with their name and octave, from A1 (27) to A7 (105). */
 function generateNotes(fn, duration, volume) {
-  const notes = {};
+  const notes: Record<string, AudioBuffer> = {};
 
   function createNoteProperty(note: number) {
     let sound: AudioBuffer;
@@ -127,6 +131,7 @@ const mul = (a, b) => (f) => {
 };
 
 const W = 1;
+const P = W / 3;
 const H = W / 2;
 const Q = H / 2;
 const E = Q / 2;
@@ -134,8 +139,143 @@ const S = E / 2;
 const T = S / 2;
 
 const kick = generateNotes(mul(sin, decay(64)), 0.5, 0.5);
-const syn = generateNotes(mul(sin, decay(32)), 1, 1);
+const syn = generateNotes(mul(sin, decay(4)), 1, 1);
 
 export function playSynth() {
   playSound(syn.a4, 0, audioContext.destination);
+}
+
+const M1 = [
+  [syn.d4, H],
+  [syn.fs4, H],
+  [syn.a4, H],
+  [syn.d5, H + Q],
+  [syn.fs5, H + Q],
+  [syn.a5, H + Q],
+  [syn.cs5, H + 2 * Q],
+  [syn.fs5, H + 2 * Q],
+  [syn.a5, H + 2 * Q],
+  [syn.d5, H + 4 * Q],
+  [syn.g5, H + 4 * Q],
+  [syn.b5, H + 4 * Q],
+];
+
+const M2 = [
+  [syn.d4, H],
+  [syn.fs4, H],
+  [syn.a4, H],
+  [syn.d5, H + Q],
+  [syn.fs5, H + Q],
+  [syn.a5, H + Q],
+  [syn.cs5, H + 2 * Q],
+  [syn.fs5, H + 2 * Q],
+  [syn.a5, H + 2 * Q],
+  [syn.d5, H + 4 * Q],
+  [syn.g5, H + 4 * Q],
+  [syn.b5, H + 4 * Q],
+  [syn.d5, 2 * H + Q],
+  [syn.g5, 2 * H + Q],
+  [syn.a5, 2 * H + Q],
+  [syn.b4, 2 * H + 2 * Q],
+  [syn.d5, 2 * H + 2 * Q],
+  [syn.g5, 2 * H + 2 * Q],
+];
+
+const triplets = (arr: AudioBuffer[]) =>
+  arr.map((note, i) => [note, Math.floor(i / 3) * W + (i % 3) * P]);
+
+const M3 = [
+  ...triplets([
+    syn.e4,
+    syn.g4,
+    syn.b4,
+
+    syn.ds5,
+    syn.c5,
+    syn.b4,
+
+    syn.g4,
+    syn.b4,
+    syn.e5,
+
+    syn.g5,
+    syn.e5,
+    syn.b4,
+
+    syn.gs4,
+    syn.f5,
+    syn.e5,
+
+    syn.d5,
+    syn.b4,
+    syn.gs4,
+
+    syn.a4,
+    syn.c5,
+    syn.e5,
+
+    syn.a5,
+    syn.fs5,
+    syn.e5,
+
+    syn.ds5,
+    syn.fs5,
+    syn.e5,
+
+    syn.ds5,
+    syn.b4,
+    syn.a4,
+
+    syn.g4,
+    syn.b4,
+    syn.ds5,
+
+    syn.e5,
+    syn.b4,
+    syn.e4,
+
+    syn.a4,
+    syn.c5,
+    syn.e5,
+
+    syn.as4,
+    syn.cs5,
+    syn.e5,
+
+    syn.b4,
+    syn.c5,
+    syn.b4,
+
+    syn.a4,
+    syn.g4,
+    syn.fs4,
+  ]),
+
+  [syn.e5, 0 * W],
+  [syn.fs5, 1 * W],
+  [syn.b5, 2 * W],
+
+  [syn.b5, 4 * W],
+  [syn.e6, 5 * W],
+  [syn.b5, 5 * W + 2 * P],
+  [syn.c6, 6 * W],
+
+  [syn.b5, 8 * W],
+  [syn.c6, 8 * W + 2 * P],
+  [syn.b5, 9 * W],
+  [syn.c6, 9 * W + 2 * P],
+  [syn.b5, 10 * W],
+  [syn.a5, 10 * W + 2 * P],
+  [syn.g5, 11 * W],
+
+  [syn.fs5, 12 * W],
+  [syn.g5, 12 * W + 2 * P],
+  [syn.fs5, 13 * W],
+  [syn.g5, 13 * W + 2 * P],
+  [syn.fs5, 14 * W],
+  [syn.b5, 15 * W],
+];
+
+export function playMelody() {
+  playSoundArray(audioContext.destination)(M3);
 }

@@ -1,8 +1,14 @@
-import { playSynth } from "./audio";
+import { playMelody, playSynth } from "./audio";
 import "./style.css";
 
-let btn = document.querySelector("#b")! as HTMLButtonElement;
+document
+  .querySelector<HTMLButtonElement>("#b")!
+  .addEventListener("click", () => {
+    playSynth();
+  });
 
-btn.addEventListener("click", () => {
-  playSynth();
-});
+document
+  .querySelector<HTMLButtonElement>("#m")!
+  .addEventListener("click", () => {
+    playMelody();
+  });
