@@ -141,6 +141,7 @@ const T = S / 2;
 const kick = generateNotes(mul(sin, decay(64)), 0.5, 0.5);
 const syn = generateNotes(mul(sin, decay(32)), 1, 1);
 const syn2 = generateNotes(mul(sin, decay(8)), 1, 1);
+const syn3 = generateNotes(mul(sin, decay(2)), 4, 1);
 
 export function playSynth() {
   playSound(syn.a4, 0, audioContext.destination);
@@ -192,7 +193,8 @@ const quarters = (arr: (Note | undefined)[]) =>
   arr.flatMap((note, i) =>
     note ? [[note, Math.floor(i / 4) * W + (i % 4) * Q]] : [],
   );
-const M3 = [
+
+export const M3 = [
   ...triplets([
     syn.e4,
     syn.g4,
@@ -339,7 +341,7 @@ const M4_b = [
   syn2.b5,
 ];
 
-const M4 = [
+export const M4 = [
   ...quarters([
     ...M4_a,
     syn2.d5,
@@ -402,6 +404,191 @@ const M4 = [
   ]),
 ];
 
-export function playMelody() {
-  playSoundArray(audioContext.destination)(M4);
+const M5_a = [
+  syn.d4,
+  syn.fs4,
+  syn.e4,
+  syn.g4,
+  syn.fs4,
+  syn.a4,
+  syn.cs4,
+  syn.a4,
+  syn.d4,
+  syn2.a4,
+  syn2.g4,
+  syn2.fs4,
+  syn2.e4,
+  syn2.a4,
+  syn.fs4,
+  syn.d4,
+
+  syn.cs4,
+  syn.a4,
+  syn.d4,
+  syn.a4,
+  syn.e4,
+  syn.a4,
+  syn.g4,
+  syn.a4,
+
+  syn.fs4,
+  syn2.a4,
+  syn2.d5,
+  syn2.e5,
+  syn2.fs5,
+  syn2.e5,
+  syn2.d5,
+  syn2.a4,
+
+  syn2.gs4,
+  syn2.b4,
+
+  syn2.e5,
+  syn2.d5,
+  syn2.cs5,
+  syn2.a5,
+
+  syn2.a4,
+  syn2.g4,
+  syn2.fs4,
+  syn2.a4,
+
+  syn2.d5,
+  syn2.c5,
+  syn2.b4,
+  syn2.g5,
+];
+
+const M5_b = [
+  syn3.d5,
+  ,
+  ,
+  ,
+  ,
+  ,
+  syn2.e5,
+  ,
+  syn2.fs5,
+  ,
+  syn2.e5,
+  syn2.d5,
+  syn2.cs5,
+
+  ,
+  syn2.d5,
+  ,
+  syn3.a5,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  ,
+  syn3.b5,
+  ,
+  ,
+  ,
+  syn3.e5,
+
+  ,
+  ,
+  ,
+  syn3.a5,
+  ,
+  ,
+  ,
+  syn3.d5,
+  ,
+  ,
+  ,
+];
+export const M5 = [
+  ...quarters([
+    ...M5_a,
+    syn2.g4,
+    syn2.fs4,
+    syn2.e4,
+    syn2.g4,
+
+    syn2.cs5,
+    syn2.b4,
+    syn2.a4,
+    syn2.g4,
+    syn2.fs4,
+    syn2.d4,
+
+    syn.a4,
+    ,
+    ,
+    ,
+    ,
+    ,
+    ,
+    ,
+    ...M5_a,
+    syn2.as4,
+    syn2.g5,
+    syn2.a4,
+    syn2.fs5,
+    syn2.g4,
+    syn2.e5,
+    syn2.fs4,
+    syn2.d5,
+    syn2.cs4,
+    syn2.a4,
+
+    syn2.d4,
+    syn2.fs4,
+    syn2.a4,
+    syn2.cs5,
+    syn2.d5,
+    syn2.a4,
+    syn2.fs4,
+    syn2.d4,
+  ]),
+
+  ...quarters([
+    ...M5_b,
+    syn2.g5,
+    ,
+    ,
+    ,
+    syn2.fs5,
+    syn2.e5,
+    syn2.d5,
+    syn2.fs5,
+    syn.e5,
+    syn2.b5,
+    syn.a5,
+    syn2.b5,
+    syn2.a5,
+    syn2.g5,
+    syn2.fs5,
+    syn2.e5,
+
+    ...M5_b,
+    syn2.d5,
+    ,
+    syn2.b4,
+    ,
+    syn2.a4,
+    syn2.fs5,
+    syn2.e5,
+    syn2.cs5,
+    syn2.d5,
+    ,
+  ]),
+];
+
+export function playMelody(m) {
+  playSoundArray(audioContext.destination)(m);
 }
