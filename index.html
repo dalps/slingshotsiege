@@ -5,14 +5,30 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>hornemup</title>
+    <style>
+      #stage {
+        /* height: 100vh;
+        aspect-ratio: 3/5; */
+        height: 500px;
+        width: 300px;
+        margin: auto;
+        box-sizing: border-box;
+        image-rendering: optimizeQuality;
+        border: solid 2px #333;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        place-items: center;
+        min-width: 320px;
+        min-height: 100vh;
+        background: #222;
+      }
+    </style>
   </head>
   <body>
-    <div id="app">
-      <button id="a">🎶</button>
-      <button id="b">🎶</button>
-      <button id="c">🎶</button>
-      <canvas id="stage"></canvas>
-    </div>
+    <canvas id="stage"></canvas>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
