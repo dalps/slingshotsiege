@@ -5,9 +5,7 @@ import { distribute } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 
 /** Populates the scene with the starting entities. */
-function init() {
-  Sling.draw()
-}
+function init() {}
 
 /** Draw the backdrop. */
 function draw() {
@@ -46,7 +44,6 @@ function draw() {
   const offset = (cw - brickSize.x * nBricks) / 2;
 
   distribute(0, cw, nBricks, (n, i) => {
-    console.log(n, i);
     if (i % 2 === 0) {
       ctx.fillRect(
         i * brickSize.x + offset,

@@ -1,3 +1,5 @@
+import { Sling } from "../entities/Sling";
+import { Castle } from "../scenes/Castle";
 import { MyCanvas } from "./MyCanvas";
 
 export type LayerName = string;
@@ -18,6 +20,7 @@ export class Stage {
    */
   public static setActiveLayer(layer: LayerName) {
     this._activeLayer = this._layers.get(layer);
+    return this;
   }
 
   public static getLayer(layer: LayerName): MyCanvas | null {
@@ -84,9 +87,19 @@ export class Stage {
       this.stage.appendChild(canvas);
     });
 
-    this.fitLayersToStage();
+    const [cw, ch] = [this.stage.clientWidth, this.stage.clientHeight];
 
-    window.addEventListener("resize", this.fitLayersToStage.bind(this));
+    const onResize = () => {
+      this.fitLayersToStage();
+      
+      // Redraw backgrounds
+      Castle.draw();
+      Sling.draw();
+    };
+    
+    this.fitLayersToStage();
+    
+    window.addEventListener("resize", onResize.bind(this));
   }
 
   static newOffscreenLayer(name: string, width: number, height: number) {
@@ -100,9 +113,6 @@ export class Stage {
     CANVASES.forEach((layer) => {
       this.getLayer(layer).setSize(cw, ch);
     });
-
-    // Redraw backgrounds
-    // ...
   }
 
   static debugOffscreenLayer(name: string) {
