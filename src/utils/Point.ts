@@ -27,6 +27,10 @@ export class Point {
     return Math.hypot(this.x, this.y);
   }
 
+  distance(p: Point) {
+    return this.sub(p).abs();
+  }
+
   rotate(phi: number) {
     const cos = Math.cos(phi);
     const sin = Math.sin(phi);

@@ -6,6 +6,8 @@ import { Point } from "../utils/Point";
 
 class Rope extends ElasticLine {}
 
+const GRAB_DISTANCE = 20;
+
 export class Sling {
   static handle: Joint;
   static anchorLeft: Point;
@@ -16,6 +18,7 @@ export class Sling {
   static armLength = 80;
   static position: Point;
   static armPos: Point;
+  static mouseDown: Point | null = null;
 
   static init() {
     Stage.setActiveLayer("bg");
@@ -32,13 +35,54 @@ export class Sling {
 
     this.anchorLeft = anchor1;
     this.anchorRight = anchor2;
-    Sling.rope = new Rope(this.anchorRight, this.anchorLeft, 5, {
-      mass: 1,
-      damping: 1,
-      jointsAttraction: 100,
+    Sling.rope = new Rope(this.anchorRight, this.anchorLeft, 3, {
+      mass: 0.5,
+      damping: 7,
+      jointsAttraction: 10000,
     });
 
-    this.handle = Sling.rope.joints[2];
+    this.handle = Sling.rope.joints[1];
+
+    const uiLayer = Stage.getLayer("ui")!;
+    const { canvas: ui } = uiLayer;
+
+    function handleMouseDown(e: MouseEvent) {
+      e.preventDefault();
+
+      const pointerPos = uiLayer.resolveMousePosition(e);
+
+      const distance = pointerPos.distance(Sling.handle.position);
+
+      // Grab & follow
+      if (distance <= GRAB_DISTANCE)
+        Sling.mouseDown = uiLayer.resolveMousePosition(e);
+    }
+
+    function handleMouseMove(e: MouseEvent) {
+      e.preventDefault();
+
+      const { mouseDown, handle } = Sling;
+
+      if (!mouseDown || e.buttons === 0) return;
+
+      Sling.mouseDown = uiLayer.resolveMousePosition(e);
+    }
+
+    function handleMouseUp(e: MouseEvent) {
+      e.preventDefault();
+
+      Sling.mouseDown = null;
+    }
+
+    ui.addEventListener("mousedown", handleMouseDown, false);
+    ui.addEventListener("mousemove", handleMouseMove, false);
+    ui.addEventListener("mouseup", handleMouseUp, false);
+  }
+
+  static followPointer() {
+    this.mouseDown &&
+      this.handle &&
+      this.handle.position.set(this.mouseDown.x, this.mouseDown.y);
   }
 
   static draw() {
@@ -66,12 +110,15 @@ export class Sling {
     const { rope } = Sling;
     rope.update();
 
-    // Draw a line from each of the anchor points to the handle point.
+    this.followPointer();
 
+    // Draw a line from each of the anchor points to the handle point.
     const { ctx, cw, ch } = Stage.setActiveLayer("game");
 
     ctx.clearRect(0, 0, cw, ch);
     ctx.lineWidth = 5;
+    ctx.lineCap = "round"
+    ctx.lineJoin = "round"
     ctx.strokeStyle = "#fff";
 
     ctx.beginPath();
@@ -81,7 +128,7 @@ export class Sling {
     });
     ctx.stroke();
     rope.joints.forEach((j) => {
-      circle(j.position, 5);
+      // circle(j.position, 5);
     });
   }
 }
