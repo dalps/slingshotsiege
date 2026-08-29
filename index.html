@@ -13,7 +13,7 @@
         width: 300px;
         margin: auto;
         box-sizing: border-box;
-        image-rendering: optimizeQuality;
+        image-rendering: pixelated;
         border: solid 2px #333;
       }
 
@@ -25,10 +25,14 @@
         min-height: 100vh;
         background: #222;
       }
+
+      #stage > canvas {
+        position: absolute;
+      }
     </style>
   </head>
   <body>
-    <canvas id="stage"></canvas>
+    <div id="stage"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

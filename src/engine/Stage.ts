@@ -64,7 +64,7 @@ export class Stage {
   }
 
   static init() {
-    this.stage = document.getElementById("stage");
+    this.stage = document.getElementById("stage")!;
 
     // Draw offscreen textures
     // ...
@@ -78,7 +78,7 @@ export class Stage {
       const { canvas } = layer;
 
       canvas.id = name;
-      canvas.style.zIndex = `${i}`;
+      canvas.style.zIndex = `${i * 10}`;
 
       this._layers.set(name, layer);
       this.stage.appendChild(canvas);
