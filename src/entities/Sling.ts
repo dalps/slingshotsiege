@@ -3,10 +3,12 @@ import { Stage } from "../engine/Stage";
 import { circle } from "../utils/CanvasUtils";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
+import type { Horn } from "./Horn";
 
 class Rope extends ElasticLine {}
 
 const GRAB_DISTANCE = 20;
+const GRAB_MARGIN = 2;
 
 export class Sling {
   static handle: Joint;
@@ -18,7 +20,10 @@ export class Sling {
   static armLength = 80;
   static position: Point;
   static armPos: Point;
-  static mouseDown: Point | null = null;
+  static grabPos: Point | null = null;
+  static released: boolean = false;
+  static load: Horn | null = null;
+  static pointerPos: Point | null = null;
 
   static init() {
     Stage.setActiveLayer("bg");
@@ -54,35 +59,46 @@ export class Sling {
       const distance = pointerPos.distance(Sling.handle.position);
 
       // Grab & follow
+      // Todo: make grabbing area larger and rectangular instead of a circle
       if (distance <= GRAB_DISTANCE)
-        Sling.mouseDown = uiLayer.resolveMousePosition(e);
+        Sling.grabPos = uiLayer.resolveMousePosition(e);
     }
 
     function handleMouseMove(e: MouseEvent) {
       e.preventDefault();
 
-      const { mouseDown, handle } = Sling;
+      const { grabPos: mouseDown, handle } = Sling;
 
       if (!mouseDown || e.buttons === 0) return;
 
-      Sling.mouseDown = uiLayer.resolveMousePosition(e);
+      Sling.grabPos = uiLayer.resolveMousePosition(e);
     }
 
     function handleMouseUp(e: MouseEvent) {
       e.preventDefault();
 
-      Sling.mouseDown = null;
+      Sling.grabPos = null;
+      Sling.released = true;
     }
 
     ui.addEventListener("mousedown", handleMouseDown, false);
     ui.addEventListener("mousemove", handleMouseMove, false);
     ui.addEventListener("mouseup", handleMouseUp, false);
+    window.addEventListener("mousemove", (e: MouseEvent) => {
+      const { clientX: x, clientY: y } = e;
+      const { bottom, top, left, right } = uiLayer.rect;
+
+      if (x < left || x > right || y < top || y > bottom) {
+        Sling.grabPos = null;
+        Sling.released = true;
+      }
+    });
   }
 
   static followPointer() {
-    this.mouseDown &&
+    this.grabPos &&
       this.handle &&
-      this.handle.position.set(this.mouseDown.x, this.mouseDown.y);
+      this.handle.position.set(this.grabPos.x, this.grabPos.y);
   }
 
   static draw() {
@@ -117,8 +133,8 @@ export class Sling {
 
     ctx.clearRect(0, 0, cw, ch);
     ctx.lineWidth = 5;
-    ctx.lineCap = "round"
-    ctx.lineJoin = "round"
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
     ctx.strokeStyle = "#fff";
 
     ctx.beginPath();
