@@ -21,7 +21,7 @@ function init() {
 
 function draw(t: timestamp) {
   requestAnimationFrame(draw);
-  Clock.update(t * 0.001);
+  Clock.update(t * 0.01);
 
   Sling.update();
 }

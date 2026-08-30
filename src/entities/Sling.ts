@@ -1,9 +1,10 @@
 import { ElasticLine, Joint } from "../engine/ElasticLine";
+import { GRAVITY } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
-import { circle } from "../utils/CanvasUtils";
+import { circle, popsicle } from "../utils/CanvasUtils";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import type { Horn } from "./Horn";
+import { Horn } from "./Horn";
 
 class Rope extends ElasticLine {}
 
@@ -21,8 +22,9 @@ export class Sling {
   static position: Point;
   static armPos: Point;
   static grabPos: Point | null = null;
-  static released: boolean = false;
-  static load: Horn | null = null;
+  static shooting: boolean = false;
+  static releasing: boolean = false;
+  static loaded: Horn | null = null;
   static pointerPos: Point | null = null;
 
   static init() {
@@ -41,12 +43,14 @@ export class Sling {
     this.anchorLeft = anchor1;
     this.anchorRight = anchor2;
     Sling.rope = new Rope(this.anchorRight, this.anchorLeft, 3, {
-      mass: 0.5,
+      mass: 10.5,
       damping: 7,
       jointsAttraction: 10000,
     });
 
     this.handle = Sling.rope.joints[1];
+
+    this.load();
 
     const uiLayer = Stage.getLayer("ui")!;
     const { canvas: ui } = uiLayer;
@@ -77,8 +81,7 @@ export class Sling {
     function handleMouseUp(e: MouseEvent) {
       e.preventDefault();
 
-      Sling.grabPos = null;
-      Sling.released = true;
+      Sling.release();
     }
 
     ui.addEventListener("mousedown", handleMouseDown, false);
@@ -90,15 +93,32 @@ export class Sling {
 
       if (x < left || x > right || y < top || y > bottom) {
         Sling.grabPos = null;
-        Sling.released = true;
+        Sling.shooting = true;
       }
     });
+  }
+
+  static release() {
+    Sling.grabPos = null;
+    Sling.shooting = true;
+
+    if (!this.loaded) return;
+
+    this.loaded.position = this.handle.position.clone();
+    this.loaded.velocity = this.handle.velocity.clone();
+    // this.loaded = null;
+    this.loaded?.clearForces();
+    this.loaded.addForce(GRAVITY);
   }
 
   static followPointer() {
     this.grabPos &&
       this.handle &&
       this.handle.position.set(this.grabPos.x, this.grabPos.y);
+  }
+
+  static load() {
+    this.loaded = new Horn(this.handle.position);
   }
 
   static draw() {
@@ -143,8 +163,26 @@ export class Sling {
       ctx.lineTo(j.position.x, j.position.y);
     });
     ctx.stroke();
-    rope.joints.forEach((j) => {
-      // circle(j.position, 5);
-    });
+
+    // Draw the horn if the slingshot is loaded
+    if (this.loaded) {
+      this.loaded.update();
+    }
+
+    // rope.joints.forEach((j) => {
+    //   circle(j.position, 5);
+    // });
+
+    // popsicle(
+    //   this.handle.position,
+    //   this.handle.position.add(this.handle.velocity),
+    //   "red",
+    // );
+
+    // popsicle(
+    //   this.handle.position,
+    //   this.handle.position.add(this.handle.acceleration),
+    //   "magenta",
+    // );
   }
 }
