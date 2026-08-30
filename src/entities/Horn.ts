@@ -4,6 +4,8 @@ import { Stage } from "../engine/Stage";
 import { circle, popsicle } from "../utils/CanvasUtils";
 import { Point } from "../utils/Point";
 
+export class HornManager extends EntityManager<Horn> {}
+
 export class Horn extends DynamicBody {
   id: string;
 
@@ -20,17 +22,24 @@ export class Horn extends DynamicBody {
     const radius = 10;
     const height = 80;
     const p = this.position;
+    const rotation = Math.atan2(this.velocity.x, -this.velocity.y);
 
+    console.log(rotation);
+
+    ctx.translate(p.x, p.y);
+    ctx.rotate(rotation);
     ctx.lineWidth = 5;
     ctx.strokeStyle = "#444444ff";
     ctx.fillStyle = "#787878ff";
     ctx.beginPath();
-    ctx.moveTo(p.x - radius, p.y);
-    ctx.lineTo(p.x, p.y - height);
-    ctx.lineTo(p.x + radius, p.y);
-    ctx.arcTo(p.x, p.y + radius * 0.5, p.x - radius, p.y, radius * 2);
+    ctx.moveTo(-radius, 0);
+    ctx.lineTo(0, -height);
+    ctx.lineTo(radius, 0);
+    ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
+    ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.resetTransform();
 
     // popsicle(this.position, this.position.add(this.velocity), "yellow");
   }
@@ -40,3 +49,5 @@ export class Horn extends DynamicBody {
     this.draw();
   }
 }
+
+export const hornMngr = new HornManager(Horn);

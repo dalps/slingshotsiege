@@ -4,7 +4,7 @@ import { Stage } from "../engine/Stage";
 import { circle, popsicle } from "../utils/CanvasUtils";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Horn } from "./Horn";
+import { Horn, hornMngr } from "./Horn";
 
 class Rope extends ElasticLine {}
 
@@ -50,7 +50,7 @@ export class Sling {
 
     this.handle = Sling.rope.joints[1];
 
-    this.load();
+    this.reload();
 
     const uiLayer = Stage.getLayer("ui")!;
     const { canvas: ui } = uiLayer;
@@ -106,19 +106,22 @@ export class Sling {
 
     this.loaded.position = this.handle.position.clone();
     this.loaded.velocity = this.handle.velocity.clone();
-    // this.loaded = null;
-    this.loaded?.clearForces();
+    this.loaded.clearForces();
     this.loaded.addForce(GRAVITY);
+
+    this.reload();
   }
 
   static followPointer() {
     this.grabPos &&
       this.handle &&
       this.handle.position.set(this.grabPos.x, this.grabPos.y);
+
+    this.loaded && this.loaded.velocity.copy(this.handle.velocity)
   }
 
-  static load() {
-    this.loaded = new Horn(this.handle.position);
+  static reload() {
+    this.loaded = hornMngr.spawn(this.handle.position);
   }
 
   static draw() {
@@ -163,11 +166,6 @@ export class Sling {
       ctx.lineTo(j.position.x, j.position.y);
     });
     ctx.stroke();
-
-    // Draw the horn if the slingshot is loaded
-    if (this.loaded) {
-      this.loaded.update();
-    }
 
     // rope.joints.forEach((j) => {
     //   circle(j.position, 5);

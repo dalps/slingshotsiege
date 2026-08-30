@@ -23,6 +23,11 @@ export class Point {
     this.y = y;
   }
 
+  copy(p: Point) {
+    this.x = p.x;
+    this.y = p.y;
+  }
+
   abs(): number {
     return Math.hypot(this.x, this.y);
   }

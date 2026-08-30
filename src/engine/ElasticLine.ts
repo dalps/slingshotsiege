@@ -59,7 +59,7 @@ export class ElasticLine {
       prevJoint && joint.addNeighbor(prevJoint);
       this.joints.push(joint);
 
-      joint.addForce(GRAVITY);
+      // joint.addForce(GRAVITY);
       joint.attachCollider(new CircleCollider(joint.position, BALL_RADIUS));
 
       prevJoint = joint;
