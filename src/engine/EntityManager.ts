@@ -1,7 +1,7 @@
 type Constructor<T> = new (...args: any[]) => T;
 
 interface Entity {
-  id: string;
+  id?: string;
 
   constructor: Function;
   update: (...args: any[]) => void;
@@ -29,7 +29,7 @@ export abstract class EntityManager<T extends Entity> {
   }
 
   public delete(t: T) {
-    this.entities.delete(t.id);
+    this.entities.delete(t.id!);
   }
 
   protected add(t: T) {

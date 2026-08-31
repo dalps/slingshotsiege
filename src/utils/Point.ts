@@ -51,6 +51,9 @@ export class Point {
     this.set(rotated.x, rotated.y);
   }
 
+  /**
+   * Returns a vector on the same line with magnitude 1.
+   */
   normalize(): Point {
     const l2 = this.abs();
     this.x /= l2;
@@ -139,6 +142,10 @@ export class Point {
 
   project(i: Point, j: Point) {
     return this.clone().projectI(i, j);
+  }
+
+  angle() {
+    return Math.atan2(this.x, -this.y)
   }
 
   toString() {

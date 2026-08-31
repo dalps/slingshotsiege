@@ -24,8 +24,6 @@ export class Horn extends DynamicBody {
     const p = this.position;
     const rotation = Math.atan2(this.velocity.x, -this.velocity.y);
 
-    console.log(rotation);
-
     ctx.translate(p.x, p.y);
     ctx.rotate(rotation);
     ctx.lineWidth = 5;
