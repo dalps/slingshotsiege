@@ -1,7 +1,7 @@
 type Constructor<T> = new (...args: any[]) => T;
 
 interface Entity {
-  id?: string;
+  id?: string; // todo: use a unique symbol (similar to ecs library)
 
   constructor: Function;
   update: (...args: any[]) => void;

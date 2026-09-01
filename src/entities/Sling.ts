@@ -1,7 +1,6 @@
 import { ElasticLine, Joint } from "../engine/ElasticLine";
 import { GRAVITY } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
-import { circle, popsicle } from "../utils/CanvasUtils";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Horn, hornMngr } from "./Horn";
@@ -52,9 +51,6 @@ export class Sling {
 
     this.reload();
 
-    const uiLayer = Stage.getLayer("ui")!;
-    const { canvas: ui } = uiLayer;
-
     function followCord(pointerPos: Point) {
       const { grabPos: mouseDown } = Sling;
 
@@ -62,60 +58,6 @@ export class Sling {
 
       Sling.grabPos = pointerPos;
     }
-
-    function handleTouchStart(e: TouchEvent) {
-      e.preventDefault();
-
-      Sling.grabCord(uiLayer.resolveTouchPosition(e));
-    }
-
-    function handleTouchMove(e: TouchEvent) {
-      e.preventDefault();
-
-      followCord(uiLayer.resolveTouchPosition(e));
-    }
-
-    function handleTouchEnd(e: TouchEvent) {
-      e.preventDefault();
-
-      Sling.release();
-    }
-
-    function handleMouseDown(e: MouseEvent) {
-      e.preventDefault();
-
-      Sling.grabCord(uiLayer.resolveMousePosition(e));
-    }
-
-    function handleMouseMove(e: MouseEvent) {
-      e.preventDefault();
-
-      if (e.buttons === 0) return;
-      followCord(uiLayer.resolveMousePosition(e));
-    }
-
-    function handleMouseUp(e: MouseEvent) {
-      e.preventDefault();
-
-      Sling.release();
-    }
-
-    ui.onmousedown = handleMouseDown;
-    ui.onmousemove = handleMouseMove;
-    ui.onmouseup = handleMouseUp;
-    ui.ontouchstart = handleTouchStart;
-    ui.ontouchmove = handleTouchMove;
-    ui.ontouchend = handleTouchEnd;
-
-    window.onmousemove = (e: MouseEvent) => {
-      const { clientX: x, clientY: y } = e;
-      const { bottom, top, left, right } = uiLayer.rect;
-
-      if (x < left || x > right || y < top || y > bottom) {
-        Sling.grabPos = null;
-        Sling.shooting = true;
-      }
-    };
   }
 
   static grabCord(pointerPos: Point) {

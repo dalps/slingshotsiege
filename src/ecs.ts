@@ -5,24 +5,32 @@ let bit = 0;
 
 type Mask = bigint;
 
-interface Component<T> {
-  [ecsComponentMask]: Mask;
-  constructor?: (new (...args: any[]) => T) & {
-    [ecsComponentMask]: Mask;
-  };
+interface RawComponent {
+  constructor: Function;
   destructor?: Function;
 }
 
-type Components = Component<any>[];
+interface WithMask {
+  [ecsComponentMask]: Mask;
+}
+
+interface RegisteredComponent<T> extends WithMask {
+  constructor?: (new (...args: any[]) => T) & WithMask;
+  destructor?: Function;
+}
+
+type AnyComponent = RegisteredComponent<any>;
+
+type Components = AnyComponent[];
 
 interface System {
   update(...args: any[]): void;
 }
 
-class Entity {
-  _world: World;
-  _components: Map<Mask, Component<any>>;
-  _mask: Mask;
+export class Entity {
+  private _world: World;
+  private _components: Map<Mask, RegisteredComponent<any>>;
+  private _mask: Mask;
 
   constructor(world: World) {
     this._world = world;
@@ -100,11 +108,15 @@ class Entity {
   /**
    * Returns the specified components of the entity. The method expects previously registered classes. If only one component is requested, the method will return the requested component, if more than one component is requested, the method will return an array of components in the same order. If the entity does not have the requested component, `null` is returned.
    */
-  get(...Components: Components) {
+  get(...Components: RawComponent[]): any[] {
     const result = Components.map(
       (Component) => this._components.get(Component[ecsComponentMask]) || null,
     );
-    return result.length > 1 ? result : result[0];
+    return result;
+  }
+
+  getComponent<T = any>(Component: T): InstanceType<T> | undefined {
+    return this._components.get(Component[ecsComponentMask]);
   }
 
   /**
@@ -118,11 +130,15 @@ class Entity {
   }
 }
 
-class Query {
-  _set: Set<Entity>;
-  _components: Components;
-  _mask: Mask;
-  _match: (e: Entity) => void;
+export class Query {
+  private _set: Set<Entity>;
+
+  /**
+   * The queried components.
+   */
+  private _components: Components;
+  private _mask: Mask;
+  private _match: (e: Entity) => void;
 
   constructor(
     world: World,
@@ -143,24 +159,21 @@ class Query {
     !parent && world._entities.forEach(this._match);
   }
 
-  _check(Components: Components) {
+  private _check(Components: Components) {
     return this._components.every((c, i) => c === Components[i]);
   }
 
-  _remove(entity: Entity) {
+  private _remove(entity: Entity) {
     this._set.delete(entity);
   }
 
   /**
    * Iterates through all the entities in the query.
    */
-  iterate(
-    fn: (
-      c: (Component<any> | null)[] | Component<any> | null,
-      e: Entity,
-    ) => void,
-  ) {
-    this._set.forEach((entity) => fn(entity.get(...this._components), entity));
+  iterate(fn: (e: Entity, ...c: any[]) => void) {
+    this._set.forEach((entity) =>
+      fn(entity, ...entity.get(...this._components)),
+    );
   }
 
   /**
@@ -171,16 +184,16 @@ class Query {
   }
 }
 
-class World {
-  _queries: Query[];
-  _entities: Set<Entity>;
+export class World {
+  private _queries: Query[];
+  private _entities: Set<Entity>;
 
   constructor() {
     this._queries = [];
     this._entities = new Set();
   }
 
-  _matchEntity(entity: Entity) {
+  private _matchEntity(entity: Entity) {
     this._queries.forEach((query) => query._match(entity));
   }
 
@@ -219,7 +232,7 @@ class World {
    *
    * Queries are the main way systems are implemented. Usually, a request is created when the system is created and used in the `update` method.
    */
-  query(...Components: Components) {
+  query(...Components: RawComponent[]) {
     const mask = Components.reduce(
       (mask, Component) => (mask |= Component[ecsComponentMask]),
       BigInt(0),
@@ -279,7 +292,7 @@ class World {
   }
 
   /**
-   * Removes all entities and their components from the world. 
+   * Removes all entities and their components from the world.
    */
   reset() {
     this._entities.forEach((entity) => entity.delete());
@@ -291,10 +304,12 @@ class World {
  *
  * There are no restrictions on the number of registered classes. There are no requirements for classes, they can contain any data and have any methods. If the class contains the `destructor` method, it will be called when deleting a component from an entity (including when deleting the entity itself) and will receive a reference to the entity as an argument.
  */
-const registerComponents = (...Components: Components) => {
+const registerComponents = (...Components: RawComponent[]) => {
   Components.forEach((Component) => {
     if (!components.has(Component)) {
-      Component[ecsComponentMask] = BigInt("0b1".padEnd(3 + bit++, "0"));
+      (Component as RegisteredComponent<any>)[ecsComponentMask] = BigInt(
+        "0b1".padEnd(3 + bit++, "0"),
+      );
       components.add(Component);
     }
   });
@@ -305,4 +320,4 @@ const registerComponents = (...Components: Components) => {
  */
 const createWorld = () => new World();
 
-export default [registerComponents, createWorld];
+export default { registerComponents, createWorld };

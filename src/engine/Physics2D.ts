@@ -1,4 +1,4 @@
-import { damp } from "../utils/MathUtils";
+import type { Query, World } from "../ecs";
 import { Point } from "../utils/Point";
 import { Clock } from "../utils/TimeUtils";
 import { CollisionManager, type Collider } from "./Collisions2D";
@@ -9,7 +9,7 @@ import { CollisionManager, type Collider } from "./Collisions2D";
 export class Force {
   constructor(
     protected _direction: Point = new Point(0, 0),
-    protected _magnitude: number = 1
+    protected _magnitude: number = 1,
   ) {}
 
   set magnitude(v) {
@@ -33,7 +33,11 @@ export class Force {
  * A pull towards another body in space
  */
 export class Pull extends Force {
-  constructor(public from: Point, public to: Point, public strength = 1) {
+  constructor(
+    public from: Point,
+    public to: Point,
+    public strength = 1,
+  ) {
     super();
   }
 
@@ -46,30 +50,6 @@ export class Pull extends Force {
   }
 }
 
-/**
- * A force that lasts a very short amount of time
- */
-export class ContactForce extends Force {
-  static EPSILON = 0.000001;
-
-  constructor(d: Point, m: number, public lambda = 1) {
-    super(d, m);
-  }
-
-  update() {
-    this._magnitude =
-      this._magnitude <= ContactForce.EPSILON
-        ? 0
-        : damp(this._magnitude, 0, this.lambda, Clock.dt);
-  }
-}
-
-export enum State {
-  Alive,
-  Asleep,
-  Dead,
-}
-
 export class DynamicBody {
   public name?: string;
   public position: Point;
@@ -78,14 +58,11 @@ export class DynamicBody {
   public angularVelocity: number;
   public mass: number;
   public friction: number;
+  public locks = { x: false, y: false };
+  public fixed = false;
+
   private _forces: Force[] = [];
   private _aux = new Point(0, 0);
-  private _locks = { x: false, y: false };
-  private _fixed = false;
-  public collider?: Collider;
-  public ref?: WeakRef<DynamicBody>;
-  public collisionID?: string;
-  public state = State.Alive;
 
   constructor(
     position: Point,
@@ -95,7 +72,7 @@ export class DynamicBody {
       friction = 1,
       orientation = 0,
       angularVelocity = 0,
-    } = {}
+    } = {},
   ) {
     this.name = name;
     this.position = position;
@@ -107,12 +84,11 @@ export class DynamicBody {
   }
 
   die() {
-    this.state = State.Dead;
     CollisionManager.unregisterBody(this);
   }
 
   addForce(force: Force) {
-    !this._fixed && this._forces.push(force);
+    !this.fixed && this._forces.push(force);
   }
 
   clearForces() {
@@ -125,7 +101,7 @@ export class DynamicBody {
 
   public get totalForce() {
     this._aux.set(0, 0);
-    this._forces.forEach(f => this._aux.addI(f.direction.scale(f.magnitude)));
+    this._forces.forEach((f) => this._aux.addI(f.direction.scale(f.magnitude)));
     return this._aux;
   }
 
@@ -136,40 +112,52 @@ export class DynamicBody {
   }
 
   toggleX() {
-    this._locks.x = !this._locks.x;
+    this.locks.x = !this.locks.x;
   }
 
   toggleY() {
-    this._locks.y = !this._locks.y;
+    this.locks.y = !this.locks.y;
   }
 
   toggleFixed() {
-    this._fixed = !this._fixed;
+    this.fixed = !this.fixed;
+  }
+}
+
+export class DynamicBodySystem {
+  query: Query;
+
+  constructor(world: World) {
+    this.query = world.query(DynamicBody);
   }
 
-  update() {
-    const { dt } = Clock;
+  update(dt: number) {
+    this.query.iterate((e, body: DynamicBody) => {
+      const {
+        position,
+        velocity,
+        acceleration,
+        orientation,
+        angularVelocity,
+        fixed,
+        locks: { x: lockedX, y: lockedY },
+      } = body;
 
-    if (this._fixed) return;
+      if (fixed) return;
 
-    this._forces.forEach(
-      f => (f as ContactForce).update && (f as ContactForce).update()
-    );
+      const o = orientation + angularVelocity * dt;
+      body.orientation = o > Math.PI * 2 ? 0 : o;
 
-    const o = this.orientation + this.angularVelocity * dt;
-    this.orientation = o > Math.PI * 2 ? 0 : o;
+      if (!lockedX) {
+        velocity.x += acceleration.x * dt;
+        position.x += velocity.x * dt + acceleration.x * dt * dt * 0.5;
+      }
 
-    if (!this._locks.x) {
-      this.velocity.x += this.acceleration.x * dt;
-      this.position.x +=
-        this.velocity.x * dt + this.acceleration.x * dt * dt * 0.5;
-    }
-
-    if (!this._locks.y) {
-      this.velocity.y += this.acceleration.y * dt;
-      this.position.y +=
-        this.velocity.y * dt + this.acceleration.y * dt * dt * 0.5;
-    }
+      if (!lockedY) {
+        velocity.y += acceleration.y * dt;
+        position.y += velocity.y * dt + acceleration.y * dt * dt * 0.5;
+      }
+    });
   }
 }
 

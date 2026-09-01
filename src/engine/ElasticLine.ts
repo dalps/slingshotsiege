@@ -1,8 +1,6 @@
-import { circle } from "../utils/CanvasUtils";
 import * as Math2D from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { CircleCollider } from "./Collisions2D";
-import { DynamicBody, GRAVITY, Pull } from "./Physics2D";
+import { DynamicBody, Pull } from "./Physics2D";
 
 const BALL_RADIUS = 5;
 
@@ -22,14 +20,13 @@ export class Joint extends DynamicBody {
     // this.neighbors.push(t);
     // t.neighbors.push(this);
 
+    // todo: create an entity with Pull component and add forces to it
+
     this.addForce(new Pull(this.position, that.position, this.attraction));
     that.addForce(new Pull(that.position, this.position, this.attraction));
   }
 }
 
-/**
- * The trampoline fabric
- */
 export class ElasticLine {
   public joints: Joint[] = [];
   mass: number;
@@ -39,7 +36,7 @@ export class ElasticLine {
   constructor(
     start: Point,
     end: Point,
-    nJoints: number,
+    subdivisions: number,
     { mass = 1, damping = 1, jointsAttraction = 100 } = {},
   ) {
     this.mass = mass;
@@ -48,9 +45,9 @@ export class ElasticLine {
 
     let prevJoint: Joint | undefined = undefined;
 
-    for (let i = 0; i < nJoints; i++) {
+    for (let i = 0; i < subdivisions; i++) {
       const joint = new Joint(
-        Math2D.lerp2(start, end, i / (nJoints - 1)),
+        Math2D.lerp2(start, end, i / (subdivisions - 1)),
         mass,
         damping,
         jointsAttraction,
@@ -60,7 +57,6 @@ export class ElasticLine {
       this.joints.push(joint);
 
       // joint.addForce(GRAVITY);
-      joint.attachCollider(new CircleCollider(joint.position, BALL_RADIUS));
 
       prevJoint = joint;
     }
@@ -70,11 +66,5 @@ export class ElasticLine {
     this.joints.at(-1)?.clearForces();
     this.joints.at(0)?.toggleFixed();
     this.joints.at(-1)?.toggleFixed();
-  }
-
-  update() {
-    this.joints.forEach((joint) => {
-      joint.update();
-    });
   }
 }

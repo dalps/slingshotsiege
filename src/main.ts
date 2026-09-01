@@ -1,16 +1,41 @@
-import { Castle } from "./scenes/Castle";
-import { Clock, type timestamp } from "./utils/TimeUtils";
 import ecs from "./ecs";
+import {
+  CircleCollider,
+  Enemy,
+  Hunter,
+  Position,
+  Prey,
+  Sprite,
+  Velocity,
+  Weapon,
+} from "./engine/components";
 import { Stage } from "./engine/Stage";
+import {
+  AttackSystem,
+  DamageSystem,
+  MovementSystem,
+  Render,
+  Spawner,
+} from "./engine/systems";
 import { Sling } from "./entities/Sling";
-import { hornMngr } from "./entities/Horn";
-import { distribute, lerp, lerp2 } from "./utils/MathUtils";
-import { foalMngr } from "./entities/Foal";
-import { Point } from "./utils/Point";
-import { circle } from "./utils/CanvasUtils";
-import { enemyMngr } from "./entities/Enemy";
+import { Castle } from "./scenes/Castle";
+import { distribute } from "./utils/MathUtils";
+import { Clock, type timestamp } from "./utils/TimeUtils";
 
-const [registerComponents, createWorld] = ecs;
+const { registerComponents, createWorld } = ecs;
+
+registerComponents(
+  Position,
+  Velocity,
+  Hunter,
+  Prey,
+  CircleCollider,
+  Weapon,
+  Enemy,
+  Sprite,
+);
+
+const world = createWorld();
 
 function init() {
   Stage.init();
@@ -27,48 +52,31 @@ function init() {
   const offset = cw * (1 - length) * 0.5;
 
   distribute(offset, cw * length, 4, (x, idx) => {
-    foalMngr.spawn(new Point(x, ch * 0.8));
+    world
+      .create()
+      .add(new Prey(), new CircleCollider(), new Position(x, ch * 0.8));
   });
 
-  requestAnimationFrame(draw);
+  requestAnimationFrame(loop);
 }
 
-class Spawner {
-  interval: number;
-
-  constructor() {
-    this.interval = setInterval(() => {
-      const { cw, ch } = Stage.setActiveLayer("game");
-      enemyMngr.spawn(
-        new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
-      );
-    }, 1000);
-  }
-
-  stop() {
-    clearInterval(this.interval);
-  }
-
-  update() {
-    foalMngr.count === 0 && this.stop();
-  }
-}
-
-const spawner = new Spawner();
-
-const pipeline: { update: () => void }[] = [
-  Sling,
-  hornMngr,
-  foalMngr,
-  enemyMngr,
-  spawner,
+const pipeline = [
+  new MovementSystem(world),
+  new AttackSystem(world),
+  new DamageSystem(world),
+  new Spawner(world),
+  new Render(world),
 ];
 
-function draw(t: timestamp) {
-  Clock.update(t * 0.01);
+let last = performance.now();
 
-  pipeline.forEach((s) => s.update());
-  requestAnimationFrame(draw);
+function loop(now: timestamp) {
+  Clock.update(now * 0.01);
+  const delta = now - last;
+  last = now;
+
+  world.update(pipeline, delta);
+  requestAnimationFrame(loop);
 }
 
 init();

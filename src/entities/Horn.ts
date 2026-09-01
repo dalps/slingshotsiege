@@ -1,3 +1,4 @@
+import { CircleCollider } from "../engine/Collisions2D";
 import { EntityManager } from "../engine/EntityManager";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
@@ -7,6 +8,8 @@ import { Point } from "../utils/Point";
 export class HornManager extends EntityManager<Horn> {}
 
 export class Horn extends DynamicBody {
+  radius = 10;
+  height = 80;
   id: string;
 
   constructor(position: Point) {
@@ -15,13 +18,12 @@ export class Horn extends DynamicBody {
     this.id = crypto.randomUUID();
     this.mass = 1;
     this.friction = 0.1;
+    this.attachCollider(new CircleCollider(this.position, this.radius));
   }
 
   draw() {
     const { ctx } = Stage.setActiveLayer("game");
-    const radius = 10;
-    const height = 80;
-    const p = this.position;
+    const { position: p, height, radius } = this;
     const rotation = Math.atan2(this.velocity.x, -this.velocity.y);
 
     ctx.translate(p.x, p.y);

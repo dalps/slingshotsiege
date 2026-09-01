@@ -1,13 +1,11 @@
-import { EntityManager } from "../engine/EntityManager";
 import { DynamicBody } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
-import { circle, popsicle } from "../utils/CanvasUtils";
-import { damp2I, lerp2 } from "../utils/MathUtils";
+import { popsicle } from "../utils/CanvasUtils";
+import { damp2I } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Clock } from "../utils/TimeUtils";
 import { foalMngr, type Foal } from "./Foal";
 
-export class EnemyManager extends EntityManager<Enemy> {}
 
 export class Enemy extends DynamicBody {
   target: Foal | null = null;
@@ -50,10 +48,7 @@ export class Enemy extends DynamicBody {
     }
   }
 
-  die() {
-    super.die();
-    enemyMngr.delete(this);
-  }
+
 
   draw() {
     const { ctx } = Stage.setActiveLayer("game");
@@ -67,12 +62,4 @@ export class Enemy extends DynamicBody {
 
     popsicle(this.position, this.position.add(this.velocity), "green");
   }
-
-  update() {
-    super.update();
-    // Move towards the prey
-    this.hunt();
-  }
 }
-
-export const enemyMngr = new EnemyManager(Enemy);
