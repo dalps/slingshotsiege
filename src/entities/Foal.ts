@@ -33,8 +33,6 @@ export class Foal {
       ctx.resetTransform();
       ctx.translate(position.x, position.y);
       ctx.lineWidth = 3;
-      ctx.strokeStyle = "black";
-      ctx.fillStyle = "#ff9ec5";
 
       ctx.fill(heartShape);
       ctx.stroke(heartShape);
@@ -46,7 +44,16 @@ export class Foal {
       this.position.x - offset,
       this.position.x + offset,
       START_LIVES,
-      (x) => heart(new Point(x, this.position.y + 60)),
+      (x, idx) => {
+        if (idx + 1 <= this.lives) {
+          ctx.strokeStyle = "black";
+          ctx.fillStyle = "#ff9ec5";
+        } else {
+          ctx.strokeStyle = "#666";
+          ctx.fillStyle = "#444";
+        }
+        heart(new Point(x, this.position.y + 60));
+      },
     );
 
     ctx.resetTransform();
@@ -56,6 +63,12 @@ export class Foal {
 
   damage() {
     this.lives = Math.max(0, this.lives - 1);
+    // todo: violently shake + blood particles
+
+    if (this.lives <= 0) {
+      foalMngr.delete(this);
+      // todo: display carcass sprite
+    }
   }
 
   update() {}

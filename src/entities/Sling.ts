@@ -55,27 +55,43 @@ export class Sling {
     const uiLayer = Stage.getLayer("ui")!;
     const { canvas: ui } = uiLayer;
 
+    function followCord(pointerPos: Point) {
+      const { grabPos: mouseDown } = Sling;
+
+      if (!mouseDown) return;
+
+      Sling.grabPos = pointerPos;
+    }
+
+    function handleTouchStart(e: TouchEvent) {
+      e.preventDefault();
+
+      Sling.grabCord(uiLayer.resolveTouchPosition(e));
+    }
+
+    function handleTouchMove(e: TouchEvent) {
+      e.preventDefault();
+
+      followCord(uiLayer.resolveTouchPosition(e));
+    }
+
+    function handleTouchEnd(e: TouchEvent) {
+      e.preventDefault();
+
+      Sling.release();
+    }
+
     function handleMouseDown(e: MouseEvent) {
       e.preventDefault();
 
-      const pointerPos = uiLayer.resolveMousePosition(e);
-
-      const distance = pointerPos.distance(Sling.handle.position);
-
-      // Grab & follow
-      // Todo: make grabbing area larger and rectangular instead of a circle
-      if (distance <= GRAB_DISTANCE)
-        Sling.grabPos = uiLayer.resolveMousePosition(e);
+      Sling.grabCord(uiLayer.resolveMousePosition(e));
     }
 
     function handleMouseMove(e: MouseEvent) {
       e.preventDefault();
 
-      const { grabPos: mouseDown, handle } = Sling;
-
-      if (!mouseDown || e.buttons === 0) return;
-
-      Sling.grabPos = uiLayer.resolveMousePosition(e);
+      if (e.buttons === 0) return;
+      followCord(uiLayer.resolveMousePosition(e));
     }
 
     function handleMouseUp(e: MouseEvent) {
@@ -84,10 +100,14 @@ export class Sling {
       Sling.release();
     }
 
-    ui.addEventListener("mousedown", handleMouseDown, false);
-    ui.addEventListener("mousemove", handleMouseMove, false);
-    ui.addEventListener("mouseup", handleMouseUp, false);
-    window.addEventListener("mousemove", (e: MouseEvent) => {
+    ui.onmousedown = handleMouseDown;
+    ui.onmousemove = handleMouseMove;
+    ui.onmouseup = handleMouseUp;
+    ui.ontouchstart = handleTouchStart;
+    ui.ontouchmove = handleTouchMove;
+    ui.ontouchend = handleTouchEnd;
+
+    window.onmousemove = (e: MouseEvent) => {
       const { clientX: x, clientY: y } = e;
       const { bottom, top, left, right } = uiLayer.rect;
 
@@ -95,7 +115,15 @@ export class Sling {
         Sling.grabPos = null;
         Sling.shooting = true;
       }
-    });
+    };
+  }
+
+  static grabCord(pointerPos: Point) {
+    const distance = pointerPos.distance(Sling.handle.position);
+
+    // Grab & follow
+    // Todo: make grabbing area larger and rectangular instead of a circle
+    if (distance <= GRAB_DISTANCE) Sling.grabPos = pointerPos;
   }
 
   static release() {
@@ -117,7 +145,7 @@ export class Sling {
       this.handle &&
       this.handle.position.set(this.grabPos.x, this.grabPos.y);
 
-    this.loaded && this.loaded.velocity.copy(this.handle.velocity)
+    this.loaded && this.loaded.velocity.copy(this.handle.velocity);
   }
 
   static reload() {

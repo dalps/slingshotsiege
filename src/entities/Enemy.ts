@@ -2,16 +2,20 @@ import { EntityManager } from "../engine/EntityManager";
 import { DynamicBody } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
 import { circle, popsicle } from "../utils/CanvasUtils";
+import { damp2I, lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
+import { Clock } from "../utils/TimeUtils";
 import { foalMngr, type Foal } from "./Foal";
 
 export class EnemyManager extends EntityManager<Enemy> {}
 
 export class Enemy extends DynamicBody {
   target: Foal | null = null;
+  speed = 20;
 
   constructor(public position: Point) {
     super(position);
+    this.velocity.set(0, this.speed);
   }
 
   hunt() {
@@ -28,8 +32,6 @@ export class Enemy extends DynamicBody {
       }
     }
 
-    console.log("found target", candidate[1]);
-
     if (candidate) {
       const [dist, target] = candidate;
 
@@ -39,9 +41,12 @@ export class Enemy extends DynamicBody {
       }
 
       this.target = target as Foal;
-      const direction = this.target.position.sub(this.position);
+      const direction = this.target.position
+        .sub(this.position)
+        .normalize()
+        .scale(this.speed);
 
-      this.velocity = direction.normalize().scale(10);
+      this.velocity = damp2I(this.velocity, direction, 1, Clock.dt);
     }
   }
 

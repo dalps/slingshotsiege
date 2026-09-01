@@ -34,8 +34,10 @@ function init() {
 }
 
 class Spawner {
+  interval: number;
+
   constructor() {
-    setInterval(() => {
+    this.interval = setInterval(() => {
       const { cw, ch } = Stage.setActiveLayer("game");
       enemyMngr.spawn(
         new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
@@ -43,15 +45,23 @@ class Spawner {
     }, 1000);
   }
 
-  update() {}
+  stop() {
+    clearInterval(this.interval);
+  }
+
+  update() {
+    foalMngr.count === 0 && this.stop();
+  }
 }
+
+const spawner = new Spawner();
 
 const pipeline: { update: () => void }[] = [
   Sling,
   hornMngr,
   foalMngr,
   enemyMngr,
-  new Spawner(),
+  spawner,
 ];
 
 function draw(t: timestamp) {

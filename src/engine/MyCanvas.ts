@@ -44,7 +44,8 @@ export class MyCanvas {
     return new Point(e.layerX, e.layerY);
   }
 
-  resolveTouchPosition(e: Touch): Point {
-    return new Point(e.clientX - this.rect.x, e.clientY - this.rect.y);
+  resolveTouchPosition(e: TouchEvent): Point {
+    const t = e.touches[0]
+    return new Point(t.clientX - this.rect.x, t.clientY - this.rect.y);
   }
 }
