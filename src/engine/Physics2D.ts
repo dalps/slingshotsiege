@@ -1,4 +1,5 @@
 import type { Query, World } from "../ecs";
+import { popsicle } from "../utils/CanvasUtils";
 import { Point } from "../utils/Point";
 
 /**
@@ -113,6 +114,18 @@ export class DynamicBody {
   toggleFixed() {
     this.fixed = !this.fixed;
   }
+
+  debugVelocity(color = "yellow") {
+    popsicle(this.position, this.position.add(this.velocity), color);
+  }
+
+  debugAcceleration(color = "green") {
+    popsicle(this.position, this.position.add(this.acceleration), color);
+  }
+
+  debugForce(color = "red") {
+    popsicle(this.position, this.position.add(this.totalForce), color);
+  }
 }
 
 export class DynamicBodySystem {
@@ -134,18 +147,19 @@ export class DynamicBodySystem {
         locks: { x: lockedX, y: lockedY },
       } = body;
 
-      if (fixed) return;
-
       const o = orientation + angularVelocity * dt;
       body.orientation = o > Math.PI * 2 ? 0 : o;
 
+      velocity.x += acceleration.x * dt;
+      velocity.y += acceleration.y * dt;
+
+      if (fixed) return;
+
       if (!lockedX) {
-        velocity.x += acceleration.x * dt;
         position.x += velocity.x * dt + acceleration.x * dt * dt * 0.5;
       }
 
       if (!lockedY) {
-        velocity.y += acceleration.y * dt;
         position.y += velocity.y * dt + acceleration.y * dt * dt * 0.5;
       }
     });

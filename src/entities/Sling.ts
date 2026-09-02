@@ -1,8 +1,9 @@
-import type { Entity, World } from "../ecs";
+import type { Entity, Query, World } from "../ecs";
 import { DragInput, Sprite, Weapon } from "../engine/components";
 import { ElasticLine, Joint } from "../engine/ElasticLine";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
-import { Stage } from "../engine/Stage";
+import { LayerName, Stage } from "../engine/Stage";
+import { circle, popsicle } from "../utils/CanvasUtils";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 
@@ -13,8 +14,9 @@ const GRAB_MARGIN = 2;
 export class SlingshotFrame {
   handle: Entity;
   rope: Entity;
+  weapon: Entity | null = null;
+
   reload: Function;
-  loaded: Entity | null = null;
 
   anchorLeft: Point;
   anchorRight: Point;
@@ -30,8 +32,6 @@ export class SlingshotFrame {
 
   constructor(world: World) {
     const { cw, ch } = Stage;
-
-    Stage.setActiveLayer("bg");
 
     this.position = new Point(cw * 0.5 - this.size.x * 0.5, ch * 0.9);
     this.armPos = new Point(cw * 0.5, this.position.y - this.size.y);
@@ -56,24 +56,51 @@ export class SlingshotFrame {
 
     this.handle = (this.rope.get(ElasticLine) as ElasticLine).joints[1];
 
-    this.handle.add(new DragInput(this.followCord.bind(this)));
+    this.handle.add(
+      new DragInput({
+        onclick: this.grabCord.bind(this),
+        onmove: this.followCord.bind(this),
+        onrelease: this.release.bind(this),
+      }),
+    );
 
     this.reload = () => {
-      world.create().add(
+      this.weapon = world.create().add(
         new Weapon(),
-        new DynamicBody(this.handle.get(DynamicBody).position, {
+        new DynamicBody(this.handle.get(Joint).position, {
           mass: 1,
           friction: 0.1,
         }),
         new Sprite(drawWeapon),
       );
     };
+
+    this.reload();
+  }
+
+  grabCord(pointerPos: Point) {
+    const handleBody: DynamicBody = this.handle.get(Joint);
+    const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
+
+    const distance = pointerPos.distance(handleBody.position);
+
+    // Grab & follow
+    // Todo: make grabbing area larger and rectangular instead of a circle
+    if (distance <= GRAB_DISTANCE) {
+      this.grabPos = pointerPos;
+      handleBody.fixed = weaponBody.fixed = true;
+    }
   }
 
   followCord(pointerPos: Point) {
     if (!this.grabPos) return;
 
+    const handleBody: DynamicBody = this.handle.get(Joint);
+    const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
+
     this.grabPos = pointerPos;
+
+    handleBody && handleBody.position.set(this.grabPos.x, this.grabPos.y);
   }
 
   followPointer() {
@@ -81,29 +108,44 @@ export class SlingshotFrame {
       this.handle &&
       this.handle.position.set(this.grabPos.x, this.grabPos.y);
 
-    this.loaded && this.loaded.velocity.copy(this.handle.velocity);
+    this.weapon && this.weapon.velocity.copy(this.handle.velocity);
   }
 
   release() {
     this.grabPos = null;
     this.shooting = true;
 
-    if (!this.loaded) return;
+    // if (!this.weapon) return;
 
-    this.loaded.position = this.handle.position.clone();
-    this.loaded.velocity = this.handle.velocity.clone();
-    this.loaded.clearForces();
-    this.loaded.addForce(GRAVITY);
+    const handleBody: DynamicBody = this.handle.get(Joint);
+    const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
+
+    weaponBody.position = handleBody.position.clone();
+    weaponBody.velocity = handleBody.velocity.clone();
+    weaponBody.clearForces();
+    weaponBody.addForce(GRAVITY);
 
     this.reload();
   }
+}
 
-  grabCord(pointerPos: Point) {
-    const distance = pointerPos.distance(this.handle.position);
+export class SlingshotSystem {
+  handle: Query;
+  slingshot: Query;
 
-    // Grab & follow
-    // Todo: make grabbing area larger and rectangular instead of a circle
-    if (distance <= GRAB_DISTANCE) this.grabPos = pointerPos;
+  constructor(world: World) {
+    this.handle = world.query(DragInput, Joint);
+    this.slingshot = world.query(SlingshotFrame);
+  }
+
+  update(dt) {
+    this.handle.iterate((e, input: DragInput, joint: Joint) => {
+      if (input.dragPos) {
+        this.handle && this.handle.position.set(this.grabPos.x, this.grabPos.y);
+
+        this.weapon && this.weapon.velocity.copy(this.handle.velocity);
+      }
+    });
   }
 }
 
@@ -116,8 +158,7 @@ export function createSlingshot(world: World): Entity {
 }
 
 function drawSlingshotFrame(e: Entity) {
-  Stage.setActiveLayer("bg");
-  const { ctx, cw, ch } = Stage;
+  const { ctx, cw, ch } = Stage.setActiveLayer("bg");
   const { position, size, armAngle, armLength, armPos } = e.get(
     SlingshotFrame,
   ) as SlingshotFrame;
@@ -160,21 +201,11 @@ function drawSlingshotStrips(e: Entity) {
   });
   ctx.stroke();
 
-  // rope.joints.forEach((j) => {
-  //   circle(j.position, 5);
-  // });
-
-  // popsicle(
-  //   this.handle.position,
-  //   this.handle.position.add(this.handle.velocity),
-  //   "red",
-  // );
-
-  // popsicle(
-  //   this.handle.position,
-  //   this.handle.position.add(this.handle.acceleration),
-  //   "magenta",
-  // );
+  joints.forEach((j) => {
+    circle(j.position, 5);
+    j.debugVelocity("magenta");
+    j.debugForce();
+  });
 }
 
 function drawWeapon(e: Entity) {
@@ -183,7 +214,7 @@ function drawWeapon(e: Entity) {
     DynamicBody,
   );
 
-  const { ctx } = Stage.setActiveLayer("game");
+  const { ctx } = Stage.setActiveLayer(LayerName.Game);
   const { height, radius } = weaponData;
   const { position: p, velocity: v } = weaponBody;
 
@@ -202,5 +233,5 @@ function drawWeapon(e: Entity) {
   ctx.stroke();
   ctx.resetTransform();
 
-  // popsicle(this.position, this.position.add(this.velocity), "yellow");
+  weaponBody.debugVelocity();
 }

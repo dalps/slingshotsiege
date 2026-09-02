@@ -15,7 +15,7 @@ export class Prey {
   constructor(public targeted = true) {}
 
   destructor() {
-    console.log("Prey killed.")
+    console.log("Prey killed.");
   }
 }
 
@@ -25,7 +25,7 @@ export class Hunter {
   speed: number = 20;
 
   destructor() {
-    console.log("Killed a hunter.")
+    console.log("Killed a hunter.");
   }
 }
 
@@ -42,29 +42,47 @@ export class Sprite {
   constructor(public draw: DrawFn) {}
 }
 
+type DragEventHandler = (pointerPos: Point) => void;
+
 export class DragInput {
+  /**
+   * Non-null when dragging.
+   */
   dragPos: Point | null = null;
   destructor: () => void;
+  onclick: DragEventHandler;
+  onmove: DragEventHandler;
+  onrelease: DragEventHandler;
 
-  constructor() {
+  constructor({
+    onrelease = (_: Point) => {},
+    onmove = (_: Point) => {},
+    onclick = (_: Point) => {},
+  } = {}) {
     const uiLayer = Stage.getLayer("ui")!;
     const { canvas: ui } = uiLayer;
+    this.onmove = onmove;
+    this.onclick = onclick;
+    this.onrelease = onrelease;
 
     const handleTouchStart = (e: TouchEvent) => {
       e.preventDefault();
 
       this.dragPos = uiLayer.resolveTouchPosition(e);
+      this.onclick(this.dragPos);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault();
 
       this.dragPos = uiLayer.resolveTouchPosition(e);
+      this.onmove(this.dragPos);
     };
 
     const handleTouchEnd = (e: TouchEvent) => {
       e.preventDefault();
 
+      this.onrelease(this.dragPos!);
       this.dragPos = null;
     };
 
@@ -72,6 +90,7 @@ export class DragInput {
       e.preventDefault();
 
       this.dragPos = uiLayer.resolveMousePosition(e);
+      this.onclick(this.dragPos);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -79,11 +98,13 @@ export class DragInput {
 
       if (!this.dragPos || e.buttons === 0) return;
       this.dragPos = uiLayer.resolveMousePosition(e);
+      this.onmove(this.dragPos);
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       e.preventDefault();
 
+      this.onrelease(this.dragPos!);
       this.dragPos = null;
     };
 

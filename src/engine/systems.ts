@@ -122,6 +122,7 @@ export class AttackSystem {
             ? weapon.points
             : this.firstKillPoints;
 
+          console.log("Impaled!!!");
           h.delete();
 
           weapon.points += pointsForKill;

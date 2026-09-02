@@ -1,55 +1,57 @@
+import type { Query, World } from "../ecs";
+
 // A monotonically increasing number
 export type timestamp = DOMHighResTimeStamp;
 
 // A very small number
 export type instant = number;
+export type milliseconds = number;
 
-export class Clock {
-  private static _then: timestamp;
-  private static _now: timestamp = 0;
-  private static _id = 0;
-  private static _timers = new Map<
-    number,
-    { _elapsed: timestamp; interval: number; cb: () => void }
-  >();
+export class Timer {
+  elapsed = 0;
 
-  static get dt() {
-    return this._now - this._then;
+  constructor(
+    public delay: milliseconds,
+    public callback: () => void,
+  ) {}
+}
+
+export class Interval extends Timer {}
+
+export class ClockSystem {
+  last: timestamp = 0;
+  timers: Query;
+  intervals: Query;
+
+  constructor(world: World) {
+    this.timers = world.query(Timer);
+    this.intervals = world.query(Interval);
   }
 
-  static get time() {
-    return this._now;
+  get now() {
+    return performance.now();
   }
 
-  static update(time: timestamp): instant {
-    this._then = this._now;
-    this._now = time;
+  update() {
+    const dt = this.now - this.last;
+    this.last = this.now;
 
-    this._timers.forEach((t) => {
-      t._elapsed += this.dt;
+    this.timers.iterate((timer, t: Timer) => {
+      t.elapsed += dt;
 
-      if (t._elapsed >= t.interval) {
-        t.cb();
-        t._elapsed = 0;
+      if (t.elapsed >= t.delay) {
+        t.callback();
+        timer.delete();
       }
     });
 
-    return this.dt;
-  }
+    this.intervals.iterate((_, t: Interval) => {
+      t.elapsed += dt;
 
-  static cancelTimer(id: number) {
-    this._timers.delete(id);
-  }
-
-  static every(interval: number, cb: () => void): number {
-    const id = this._id;
-    this._timers.set(id, {
-      _elapsed: 0,
-      interval,
-      cb,
+      if (t.elapsed >= t.delay) {
+        t.callback();
+        t.elapsed = 0;
+      }
     });
-
-    this._id++;
-    return id;
   }
 }
