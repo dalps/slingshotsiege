@@ -1,34 +1,38 @@
+import type { Entity, World } from "../ecs";
+import { DragInput, Sprite, Weapon } from "../engine/components";
 import { ElasticLine, Joint } from "../engine/ElasticLine";
-import { GRAVITY } from "../engine/Physics2D";
+import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Horn, hornMngr } from "./Horn";
-
-class Rope extends ElasticLine {}
+import { Horn } from "./Horn";
 
 const GRAB_DISTANCE = 20;
 const GRAB_MARGIN = 2;
 
-export class Sling {
-  static handle: Joint;
-  static anchorLeft: Point;
-  static anchorRight: Point;
-  static rope: Rope;
-  static size = new Point(20, 180);
-  static armAngle = 70;
-  static armLength = 80;
-  static position: Point;
-  static armPos: Point;
-  static grabPos: Point | null = null;
-  static shooting: boolean = false;
-  static releasing: boolean = false;
-  static loaded: Horn | null = null;
-  static pointerPos: Point | null = null;
+// Make it into a system which queries DragInput
+export class SlingshotFrame {
+  handle: Entity;
+  rope: Entity;
+  reload: Function;
+  loaded: Entity | null = null;
 
-  static init() {
+  anchorLeft: Point;
+  anchorRight: Point;
+  size = new Point(20, 180);
+  armAngle = 70;
+  armLength = 80;
+  position: Point;
+  armPos: Point;
+  grabPos: Point | null = null;
+  shooting: boolean = false;
+  releasing: boolean = false;
+  pointerPos: Point | null = null;
+
+  constructor(world: World) {
+    const { cw, ch } = Stage;
+
     Stage.setActiveLayer("bg");
-    const { ctx, cw, ch } = Stage;
 
     this.position = new Point(cw * 0.5 - this.size.x * 0.5, ch * 0.9);
     this.armPos = new Point(cw * 0.5, this.position.y - this.size.y);
@@ -41,36 +45,47 @@ export class Sling {
 
     this.anchorLeft = anchor1;
     this.anchorRight = anchor2;
-    Sling.rope = new Rope(this.anchorRight, this.anchorLeft, 3, {
-      mass: 10.5,
-      damping: 7,
-      jointsAttraction: 10000,
-    });
 
-    this.handle = Sling.rope.joints[1];
+    this.rope = world.create().add(
+      new ElasticLine(world, this.anchorRight, this.anchorLeft, 3, {
+        mass: 10.5,
+        damping: 7,
+        jointsAttraction: 10000,
+      }),
+      new Sprite(drawSlingshotStrips),
+    );
 
-    this.reload();
+    this.handle = (this.rope.get(ElasticLine) as ElasticLine).joints[1];
 
-    function followCord(pointerPos: Point) {
-      const { grabPos: mouseDown } = Sling;
+    this.handle.add(new DragInput(this.followCord.bind(this)));
 
-      if (!mouseDown) return;
-
-      Sling.grabPos = pointerPos;
-    }
+    this.reload = () => {
+      world
+        .create()
+        .add(
+          new Weapon(),
+          new DynamicBody(this.handle.get(DynamicBody).position),
+        );
+    };
   }
 
-  static grabCord(pointerPos: Point) {
-    const distance = pointerPos.distance(Sling.handle.position);
+  followCord(pointerPos: Point) {
+    if (!this.grabPos) return;
 
-    // Grab & follow
-    // Todo: make grabbing area larger and rectangular instead of a circle
-    if (distance <= GRAB_DISTANCE) Sling.grabPos = pointerPos;
+    this.grabPos = pointerPos;
   }
 
-  static release() {
-    Sling.grabPos = null;
-    Sling.shooting = true;
+  followPointer() {
+    this.grabPos &&
+      this.handle &&
+      this.handle.position.set(this.grabPos.x, this.grabPos.y);
+
+    this.loaded && this.loaded.velocity.copy(this.handle.velocity);
+  }
+
+  release() {
+    this.grabPos = null;
+    this.shooting = true;
 
     if (!this.loaded) return;
 
@@ -82,75 +97,81 @@ export class Sling {
     this.reload();
   }
 
-  static followPointer() {
-    this.grabPos &&
-      this.handle &&
-      this.handle.position.set(this.grabPos.x, this.grabPos.y);
+  grabCord(pointerPos: Point) {
+    const distance = pointerPos.distance(this.handle.position);
 
-    this.loaded && this.loaded.velocity.copy(this.handle.velocity);
+    // Grab & follow
+    // Todo: make grabbing area larger and rectangular instead of a circle
+    if (distance <= GRAB_DISTANCE) this.grabPos = pointerPos;
   }
+}
 
-  static reload() {
-    this.loaded = hornMngr.spawn(this.handle.position);
-  }
+export function createSlingshot(world: World): Entity {
+  const slingshot = world
+    .create()
+    .add(new SlingshotFrame(world), new Sprite(drawSlingshotFrame));
 
-  static draw() {
-    Stage.setActiveLayer("bg");
-    const { ctx, cw, ch } = Stage;
-    const { position, size, armAngle, armLength, armPos } = this;
+  return slingshot;
+}
 
-    ctx.fillStyle = "#a96f3cff";
+function drawSlingshotFrame(e: Entity) {
+  Stage.setActiveLayer("bg");
+  const { ctx, cw, ch } = Stage;
+  const { position, size, armAngle, armLength, armPos } = e.get(
+    SlingshotFrame,
+  ) as SlingshotFrame;
 
-    ctx.fillRect(position.x, position.y, size.x, -size.y);
+  ctx.fillStyle = "#a96f3cff";
 
-    ctx.translate(cw * 0.5, armPos.y);
-    ctx.rotate((180 - armAngle * 0.5) * DEG2RAD);
-    ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
-    ctx.rotate(armAngle * DEG2RAD);
-    ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
-    // circle(armPos, 5);
+  ctx.fillRect(position.x, position.y, size.x, -size.y);
 
-    ctx.resetTransform();
-    // circle(anchor1, 5, "white");
-    // circle(anchor2, 5, "white");
-  }
+  ctx.translate(cw * 0.5, armPos.y);
+  ctx.rotate((180 - armAngle * 0.5) * DEG2RAD);
+  ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
+  ctx.rotate(armAngle * DEG2RAD);
+  ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
+  // circle(armPos, 5);
 
-  static update() {
-    const { rope } = Sling;
-    rope.update();
+  ctx.resetTransform();
+  // circle(anchor1, 5, "white");
+  // circle(anchor2, 5, "white");
+}
 
-    this.followPointer();
+/**
+ * Draws a line connecting the points that make up the slingshot strip.
+ */
+function drawSlingshotStrips(e: Entity) {
+  const joints: Joint[] = (e.get(ElasticLine) as ElasticLine).joints.map((e) =>
+    e.get(Joint),
+  );
+  const { ctx, cw, ch } = Stage.setActiveLayer("game");
 
-    // Draw a line from each of the anchor points to the handle point.
-    const { ctx, cw, ch } = Stage.setActiveLayer("game");
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "#fff";
 
-    ctx.clearRect(0, 0, cw, ch);
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.strokeStyle = "#fff";
+  ctx.beginPath();
+  ctx.moveTo(joints[0].position.x, joints[0].position.y);
+  joints.forEach((j) => {
+    ctx.lineTo(j.position.x, j.position.y);
+  });
+  ctx.stroke();
 
-    ctx.beginPath();
-    ctx.moveTo(rope.joints[0].position.x, rope.joints[0].position.y);
-    rope.joints.forEach((j) => {
-      ctx.lineTo(j.position.x, j.position.y);
-    });
-    ctx.stroke();
+  // rope.joints.forEach((j) => {
+  //   circle(j.position, 5);
+  // });
 
-    // rope.joints.forEach((j) => {
-    //   circle(j.position, 5);
-    // });
+  // popsicle(
+  //   this.handle.position,
+  //   this.handle.position.add(this.handle.velocity),
+  //   "red",
+  // );
 
-    // popsicle(
-    //   this.handle.position,
-    //   this.handle.position.add(this.handle.velocity),
-    //   "red",
-    // );
-
-    // popsicle(
-    //   this.handle.position,
-    //   this.handle.position.add(this.handle.acceleration),
-    //   "magenta",
-    // );
-  }
+  // popsicle(
+  //   this.handle.position,
+  //   this.handle.position.add(this.handle.acceleration),
+  //   "magenta",
+  // );
 }

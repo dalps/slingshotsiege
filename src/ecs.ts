@@ -19,7 +19,7 @@ interface RegisteredComponent<T> extends WithMask {
   destructor?: Function;
 }
 
-type AnyComponent = RegisteredComponent<any>;
+type AnyComponent = RawComponent;
 
 type Components = AnyComponent[];
 
@@ -66,7 +66,7 @@ export class Entity {
   /**
    * Adds components to the entity. The method waits for instances of previously registered classes. If the transferred component is already present in the entity, the old component will be deleted (with a call to the destructor, if any) and replaced with a new one. Returns the entity itself.
    */
-  add(...components: Components) {
+  add(...components: AnyComponent[]) {
     if (this.exists) {
       components.forEach((component) => {
         const mask = component?.constructor?.[ecsComponentMask];
@@ -108,11 +108,11 @@ export class Entity {
   /**
    * Returns the specified components of the entity. The method expects previously registered classes. If only one component is requested, the method will return the requested component, if more than one component is requested, the method will return an array of components in the same order. If the entity does not have the requested component, `null` is returned.
    */
-  get(...Components: RawComponent[]): any[] {
+  get(...Components: RawComponent[]): (any | null)[] | any | null {
     const result = Components.map(
       (Component) => this._components.get(Component[ecsComponentMask]) || null,
     );
-    return result;
+    return result.length > 1 ? result : result[0];
   }
 
   getComponent<T = any>(Component: T): InstanceType<T> | undefined {
@@ -168,12 +168,13 @@ export class Query {
   }
 
   /**
-   * Iterates through all the entities in the query.
+   * Iterates through all the entities that satisfy the query.
    */
   iterate(fn: (e: Entity, ...c: any[]) => void) {
-    this._set.forEach((entity) =>
-      fn(entity, ...entity.get(...this._components)),
-    );
+    this._set.forEach((entity) => {
+      const c = entity.get(...this._components);
+      fn(entity, ...(c instanceof Array ? c : [c]));
+    });
   }
 
   /**

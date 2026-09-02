@@ -1,5 +1,5 @@
 // A monotonically increasing number
-export type timestamp = number;
+export type timestamp = DOMHighResTimeStamp;
 
 // A very small number
 export type instant = number;

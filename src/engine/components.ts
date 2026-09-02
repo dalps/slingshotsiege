@@ -1,5 +1,6 @@
 import type { Entity } from "../ecs";
 import { Point } from "../utils/Point";
+import type { timestamp } from "../utils/TimeUtils";
 import type { Force } from "./Physics2D";
 import { Stage } from "./Stage";
 
@@ -23,6 +24,9 @@ export class Hunter {
 }
 
 export class Weapon {
+  lastKill: timestamp = NaN;
+  points = 0;
+  
   constructor(public fired = false) {}
 }
 

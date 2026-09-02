@@ -1,11 +1,12 @@
 import type { Entity, Query, World } from "../ecs";
 import { damp2I, lerp } from "../utils/MathUtils";
+import { Point } from "../utils/Point";
 import { Hunter, Prey, Sprite, Weapon } from "./components";
 import { DynamicBody } from "./Physics2D";
 import { Stage } from "./Stage";
 
 /**
- * Selects a baby unicorn for every foe to prey on and directs the foe towards it.
+ * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
  */
 export class TargetingSystem {
   hunters: Query;
@@ -58,24 +59,61 @@ export class DamageSystem {
 
   update() {
     this.hunters.iterate((entity, hunter: Hunter, hunterBody: DynamicBody) => {
-      if (hunter.target?.exists)
-        this.bounties.iterate(
-          (entity, bounty: Prey, bountyBody: DynamicBody) => {},
-        );
+      if (hunter.target?.exists || hunter.distance! < 20) {
+        const preyEntity = hunter.target!;
+        const preyData = preyEntity.get(Prey)! as Prey;
+
+        preyData.lives = Math.max(0, preyData.lives - 1);
+        // todo: violently shake + blood particles
+
+        if (preyData.lives <= 0) {
+          preyEntity.delete();
+          // todo: display carcass sprite
+        }
+      }
     });
   }
 }
 
+/**
+ * Makes travelling horns kill the foes.
+ */
 export class AttackSystem {
+  comboMaxDelay = 100;
+  damageRadius = 50;
+  firstKillPoints = 100;
+
   weapons: Query;
   hunter: Query;
 
   constructor(world: World) {
-    this.weapons = world.query(Weapon, Collider);
-    this.hunter = world.query(Hunter, Collider);
+    this.weapons = world.query(Weapon, DynamicBody);
+    this.hunter = world.query(Hunter, DynamicBody);
   }
 
-  update(dt: number) {}
+  update(dt: number) {
+    this.weapons.iterate((w, weapon: Weapon, weaponBody: DynamicBody) => {
+      if (!weapon.fired) return;
+
+      this.hunter.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
+        const distance = weaponBody.position.distance(hunterBody.position);
+
+        if (distance < this.damageRadius) {
+          const now = performance.now();
+
+          // 100 --> 200 --> 400 --> 800
+          const pointsForKill = weapon.points
+            ? weapon.points
+            : this.firstKillPoints;
+
+          h.delete();
+
+          weapon.points += pointsForKill;
+          weapon.lastKill = now;
+        }
+      });
+    });
+  }
 }
 
 export class ElasticLineSystem {
@@ -98,9 +136,9 @@ export class Spawner {
         .create()
         .add(
           new Hunter(),
-          new CircleCollider(),
-          new Position(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
-          new Velocity(),
+          new DynamicBody(
+            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
+          ),
         );
     }, 1000);
   }

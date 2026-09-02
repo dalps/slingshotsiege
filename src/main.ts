@@ -1,67 +1,50 @@
 import ecs from "./ecs";
-import {
-  CircleCollider,
-  Enemy,
-  Hunter,
-  Position,
-  Prey,
-  Sprite,
-  Velocity,
-  Weapon,
-} from "./engine/components";
+import { Hunter, Prey, Sprite, Weapon } from "./engine/components";
+import { ElasticLine } from "./engine/ElasticLine";
+import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
 import { Stage } from "./engine/Stage";
 import {
   AttackSystem,
   DamageSystem,
-  MovementSystem,
   Render,
   Spawner,
+  TargetingSystem,
 } from "./engine/systems";
-import { Sling } from "./entities/Sling";
+import { createSlingshot, Sling } from "./entities/Sling";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
+import { Point } from "./utils/Point";
 import { Clock, type timestamp } from "./utils/TimeUtils";
 
 const { registerComponents, createWorld } = ecs;
 
-registerComponents(
-  Position,
-  Velocity,
-  Hunter,
-  Prey,
-  CircleCollider,
-  Weapon,
-  Enemy,
-  Sprite,
-);
+registerComponents(Hunter, Prey, DynamicBody, Weapon, Sprite);
 
 const world = createWorld();
 
 function init() {
   Stage.init();
   Castle.init();
-  Sling.init();
 
   Stage.fitLayersToStage();
   Castle.draw();
 
-  Sling.draw();
+  createSlingshot(world);
 
   const { cw, ch } = Stage.setActiveLayer("game");
   const length = 0.8;
   const offset = cw * (1 - length) * 0.5;
 
   distribute(offset, cw * length, 4, (x, idx) => {
-    world
-      .create()
-      .add(new Prey(), new CircleCollider(), new Position(x, ch * 0.8));
+    world.create().add(new Prey(), new DynamicBody(new Point(x, ch * 0.8)));
   });
 
   requestAnimationFrame(loop);
 }
 
 const pipeline = [
-  new MovementSystem(world),
+  new DynamicBodySystem(world),
+  new TargetingSystem(world),
   new AttackSystem(world),
   new DamageSystem(world),
   new Spawner(world),
@@ -75,7 +58,7 @@ function loop(now: timestamp) {
   const delta = now - last;
   last = now;
 
-  world.update(pipeline, delta);
+  world.update(pipeline, delta * 0.001);
   requestAnimationFrame(loop);
 }
 
