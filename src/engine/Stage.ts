@@ -1,6 +1,7 @@
 export const enum LayerName {
-  BG_1 = "bg'",
-  BG_2 = "bg",
+  BG_1 = "bg1",
+  BG_2 = "bg2",
+  BG_3 = "bg3",
   Game = "game",
   Info = "info",
   UI = "ui",
@@ -12,6 +13,7 @@ export const gameoverElements = document.getElementById("gameover");
 const STACK: LayerName[] = [
   LayerName.BG_1,
   LayerName.BG_2,
+  LayerName.BG_3,
   LayerName.Game,
   LayerName.Info,
   LayerName.UI,

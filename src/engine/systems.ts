@@ -1,10 +1,11 @@
 import type { Entity, Query, World } from "../ecs";
 import { drawEnemy } from "../entities/Enemy";
-import { damp2I, lerp } from "../utils/MathUtils";
+import { drawFarGoneWeapon } from "../entities/Sling";
+import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Hunter, Prey, Sprite, Weapon } from "./components";
-import { DynamicBody } from "./Physics2D";
-import { Stage } from "./Stage";
+import { DynamicBody, Force, GRAVITY } from "./Physics2D";
+import { LayerName, Stage } from "./Stage";
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -169,10 +170,48 @@ export class Render {
   }
 
   update() {
+    Stage.clearLayer(LayerName.Game);
+    Stage.clearLayer(LayerName.BG_2);
     this.sprites.iterate((entity, sprite: Sprite) => {
       sprite.draw(entity);
     });
   }
 }
 
-export class SlingshotSystem {}
+/**
+ * Responsible for cleaning up fired projectiles and animating the background with those that are traveling downwards.
+ */
+export class FiredProjectileSystem {
+  firedWeapons: Query;
+
+  constructor(public world: World) {
+    this.firedWeapons = world.query(Weapon, DynamicBody);
+  }
+
+  update() {
+    this.firedWeapons.iterate(
+      (entity, weapon: Weapon, weaponBody: DynamicBody) => {
+        if (!weapon.fired) return;
+
+        const { position, velocity } = weaponBody;
+        const angle = velocity.angle() * RAD2DEG; // 0 points up, -180 (anticlockwise) and 180 (clockwise) both point down
+
+        // Make sure it's traveling straight down, to an extent, before deleting it
+        if (position.y < -Stage.ch * 0.5 && Math.abs(angle) - 180 < 25) {
+          // Replace the sprite
+          // console.log("Replacing sprite...");
+          weaponBody.clearForces()
+          weaponBody.addForce(new Force(new Point(0,1), 5))
+          entity.remove(Sprite);
+          entity.add(new Sprite(drawFarGoneWeapon));
+        }
+        // todo: Remove when below the screen area
+      },
+    );
+  }
+}
+
+/**
+ * Responsible for reloading the slingshot with weapons.
+ */
+export class ReloadSystem {}

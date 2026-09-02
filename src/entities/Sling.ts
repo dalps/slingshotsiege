@@ -139,7 +139,7 @@ export function createSlingshot(world: World): Entity {
 }
 
 function drawSlingshotFrame(e: Entity) {
-  const { ctx, cw, ch } = Stage.setActiveLayer("bg");
+  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_3);
   const { position, size, armAngle, armLength, armPos } = e.get(
     SlingshotFrame,
   ) as SlingshotFrame;
@@ -169,7 +169,6 @@ function drawSlingshotStrips(e: Entity) {
   );
   const { ctx, cw, ch } = Stage.setActiveLayer("game");
 
-  ctx.clearRect(0, 0, cw, ch);
   ctx.lineWidth = 5;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
@@ -213,5 +212,27 @@ function drawWeapon(e: Entity) {
   ctx.stroke();
   ctx.resetTransform();
 
-  weaponBody.debug("yellow");
+  // weaponBody.debug("yellow");
+}
+
+export function drawFarGoneWeapon(e: Entity) {
+  const weaponBody: DynamicBody = e.get(DynamicBody);
+
+  const { ctx } = Stage.getLayer(LayerName.BG_2)!;
+  // Stage.clearLayer(LayerName.BG_2);
+  const [height, radius] = [60, 6];
+  const { position: p, velocity: v } = weaponBody;
+
+  ctx.translate(p.x, p.y);
+  ctx.rotate(v.angle());
+  ctx.lineWidth = 5;
+  ctx.fillStyle = "#8493a3ff";
+  ctx.beginPath();
+  ctx.moveTo(-radius, 0);
+  ctx.lineTo(0, -height);
+  ctx.lineTo(radius, 0);
+  ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.resetTransform();
 }

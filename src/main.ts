@@ -6,6 +6,7 @@ import { Stage } from "./engine/Stage";
 import {
   AttackSystem,
   DamageSystem,
+  FiredProjectileSystem,
   Render,
   Spawner,
   TargetingSystem,
@@ -63,6 +64,7 @@ const pipeline = [
   new AttackSystem(world),
   new DamageSystem(world),
   new Spawner(world),
+  new FiredProjectileSystem(world),
   new Render(world),
 ];
 
