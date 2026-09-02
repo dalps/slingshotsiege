@@ -1,13 +1,11 @@
 import { Stage } from "../engine/Stage";
-import { Sling } from "../entities/Sling";
 import { makeGradient } from "../utils/CanvasUtils";
 import { distribute } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 
-/** Populates the scene with the starting entities. */
-function init() {}
-
-/** Draw the backdrop. */
+/**
+ * Draws the game's backdrop.
+ */
 function draw() {
   Stage.setActiveLayer("bg");
   const { ctx, cw, ch } = Stage;
@@ -55,4 +53,4 @@ function draw() {
   });
 }
 
-export const Castle = { draw, init };
+export const Castle = { draw };

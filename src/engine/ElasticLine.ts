@@ -48,23 +48,20 @@ export class ElasticLine {
     let prevJoint: Entity | undefined = undefined;
 
     for (let i = 0; i < subdivisions; i++) {
-      const joint = world
-        .create()
-        .add(
-          new Joint(
-            Math2D.lerp2(start, end, i / (subdivisions - 1)),
-            mass,
-            damping,
-            jointsAttraction,
-          ),
-        );
+      const joint = new Joint(
+        Math2D.lerp2(start, end, i / (subdivisions - 1)),
+        mass,
+        damping,
+        jointsAttraction,
+      );
+      const jointEntity = world.create().add(joint);
 
-      prevJoint && joint.get(Joint).addNeighbor(prevJoint);
-      this.joints.push(joint);
+      prevJoint && jointEntity.get(Joint).addNeighbor(joint);
+      this.joints.push(jointEntity);
 
       // joint.addForce(GRAVITY);
 
-      prevJoint = joint;
+      prevJoint = jointEntity;
     }
 
     // fix the extremities

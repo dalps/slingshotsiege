@@ -5,7 +5,6 @@ import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Horn } from "./Horn";
 
 const GRAB_DISTANCE = 20;
 const GRAB_MARGIN = 2;
@@ -60,12 +59,14 @@ export class SlingshotFrame {
     this.handle.add(new DragInput(this.followCord.bind(this)));
 
     this.reload = () => {
-      world
-        .create()
-        .add(
-          new Weapon(),
-          new DynamicBody(this.handle.get(DynamicBody).position),
-        );
+      world.create().add(
+        new Weapon(),
+        new DynamicBody(this.handle.get(DynamicBody).position, {
+          mass: 1,
+          friction: 0.1,
+        }),
+        new Sprite(drawWeapon),
+      );
     };
   }
 
@@ -174,4 +175,32 @@ function drawSlingshotStrips(e: Entity) {
   //   this.handle.position.add(this.handle.acceleration),
   //   "magenta",
   // );
+}
+
+function drawWeapon(e: Entity) {
+  const [weaponData, weaponBody]: [Weapon, DynamicBody] = e.get(
+    Weapon,
+    DynamicBody,
+  );
+
+  const { ctx } = Stage.setActiveLayer("game");
+  const { height, radius } = weaponData;
+  const { position: p, velocity: v } = weaponBody;
+
+  ctx.translate(p.x, p.y);
+  ctx.rotate(v.angle());
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#444444ff";
+  ctx.fillStyle = "#787878ff";
+  ctx.beginPath();
+  ctx.moveTo(-radius, 0);
+  ctx.lineTo(0, -height);
+  ctx.lineTo(radius, 0);
+  ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.resetTransform();
+
+  // popsicle(this.position, this.position.add(this.velocity), "yellow");
 }

@@ -1,6 +1,6 @@
 import ecs from "./ecs";
-import { Hunter, Prey, Sprite, Weapon } from "./engine/components";
-import { ElasticLine } from "./engine/ElasticLine";
+import { DragInput, Hunter, Prey, Sprite, Weapon } from "./engine/components";
+import { ElasticLine, Joint } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
 import { Stage } from "./engine/Stage";
 import {
@@ -10,7 +10,8 @@ import {
   Spawner,
   TargetingSystem,
 } from "./engine/systems";
-import { createSlingshot, Sling } from "./entities/Sling";
+import { drawFoal } from "./entities/Foal";
+import { createSlingshot, SlingshotFrame } from "./entities/Sling";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
@@ -18,13 +19,22 @@ import { Clock, type timestamp } from "./utils/TimeUtils";
 
 const { registerComponents, createWorld } = ecs;
 
-registerComponents(Hunter, Prey, DynamicBody, Weapon, Sprite);
+registerComponents(
+  Hunter,
+  Prey,
+  DynamicBody,
+  SlingshotFrame,
+  DragInput,
+  Joint,
+  ElasticLine,
+  Weapon,
+  Sprite,
+);
 
 const world = createWorld();
 
 function init() {
   Stage.init();
-  Castle.init();
 
   Stage.fitLayersToStage();
   Castle.draw();
@@ -36,7 +46,13 @@ function init() {
   const offset = cw * (1 - length) * 0.5;
 
   distribute(offset, cw * length, 4, (x, idx) => {
-    world.create().add(new Prey(), new DynamicBody(new Point(x, ch * 0.8)));
+    world.create().add(
+      new Prey(),
+      new DynamicBody(new Point(x, ch * 0.8), {
+        // startVelocity: new Point((-1 + 2 * Math.random()) * 10, 0),
+      }),
+      new Sprite(drawFoal),
+    );
   });
 
   requestAnimationFrame(loop);
@@ -58,7 +74,7 @@ function loop(now: timestamp) {
   const delta = now - last;
   last = now;
 
-  world.update(pipeline, delta * 0.001);
+  world.update(pipeline, delta * 0.01);
   requestAnimationFrame(loop);
 }
 

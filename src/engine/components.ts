@@ -13,6 +13,10 @@ export class Prey {
   radius = 40;
 
   constructor(public targeted = true) {}
+
+  destructor() {
+    console.log("Prey killed.")
+  }
 }
 
 export class Hunter {
@@ -20,13 +24,17 @@ export class Hunter {
   distance: number | null = null;
   speed: number = 20;
 
-  constructor() {}
+  destructor() {
+    console.log("Killed a hunter.")
+  }
 }
 
 export class Weapon {
   lastKill: timestamp = NaN;
   points = 0;
-  
+  radius = 10;
+  height = 80;
+
   constructor(public fired = false) {}
 }
 

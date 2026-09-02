@@ -1,4 +1,5 @@
 import type { Entity, Query, World } from "../ecs";
+import { drawEnemy } from "../entities/Enemy";
 import { damp2I, lerp } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Hunter, Prey, Sprite, Weapon } from "./components";
@@ -19,8 +20,20 @@ export class TargetingSystem {
 
   update(dt: number) {
     this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
-      if (hunter.target?.exists) return;
+      if (hunterBody.position.y > Stage.ch * 1.5) {
+        h.delete();
+        return;
+      }
 
+      if (hunter.target?.exists) {
+        // Just update the distance to the target
+        hunter.distance = hunterBody.position.distance(
+          hunter.target.get(DynamicBody).position,
+        );
+        return;
+      }
+
+      // Set a new target
       let candidateTarget = null;
       let candidateDistance = Infinity;
 
@@ -40,9 +53,10 @@ export class TargetingSystem {
           .getComponent(DynamicBody)!
           .position.sub(hunterBody.position)
           .normalize()
-          .scale(hunter.speed);
+          .scale(hunter.speed * 10);
 
         hunterBody.velocity = damp2I(hunterBody.velocity, direction, 1, dt);
+        // hunterBody.velocity = direction;
       }
     });
   }
@@ -58,10 +72,12 @@ export class DamageSystem {
   }
 
   update() {
-    this.hunters.iterate((entity, hunter: Hunter, hunterBody: DynamicBody) => {
-      if (hunter.target?.exists || hunter.distance! < 20) {
+    this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
+      if (hunter.target?.exists && hunter.distance! < 20) {
         const preyEntity = hunter.target!;
         const preyData = preyEntity.get(Prey)! as Prey;
+
+        h.delete();
 
         preyData.lives = Math.max(0, preyData.lives - 1);
         // todo: violently shake + blood particles
@@ -116,16 +132,6 @@ export class AttackSystem {
   }
 }
 
-export class ElasticLineSystem {
-  joints: Entity[];
-}
-
-export class DraggingSystem {
-  grab() {}
-
-  release() {}
-}
-
 export class Spawner {
   interval: number;
 
@@ -137,8 +143,9 @@ export class Spawner {
         .add(
           new Hunter(),
           new DynamicBody(
-            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
+            new Point(Math.random() * cw, lerp(0, ch * 0.5, Math.random())),
           ),
+          new Sprite(drawEnemy),
         );
     }, 1000);
   }

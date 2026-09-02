@@ -1,4 +1,3 @@
-import { Sling } from "../entities/Sling";
 import { Castle } from "../scenes/Castle";
 import { MyCanvas } from "./MyCanvas";
 
@@ -94,7 +93,6 @@ export class Stage {
       
       // Redraw backgrounds
       Castle.draw();
-      Sling.draw();
     };
     
     this.fitLayersToStage();

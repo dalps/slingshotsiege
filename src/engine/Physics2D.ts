@@ -1,10 +1,8 @@
 import type { Query, World } from "../ecs";
 import { Point } from "../utils/Point";
-import { Clock } from "../utils/TimeUtils";
-import { CollisionManager, type Collider } from "./Collisions2D";
 
 /**
- * A permanent force that can be applied to a dynamic body
+ * A persistent force that can be applied to a dynamic body.
  */
 export class Force {
   constructor(
@@ -30,7 +28,7 @@ export class Force {
 }
 
 /**
- * A pull towards another body in space
+ * A pull towards another body in space.
  */
 export class Pull extends Force {
   constructor(
@@ -65,26 +63,23 @@ export class DynamicBody {
   private _aux = new Point(0, 0);
 
   constructor(
-    position: Point,
+    startPosition: Point,
     {
       name = "DB",
       mass = 1,
-      friction = 1,
+      friction = 0,
       orientation = 0,
       angularVelocity = 0,
+      startVelocity = new Point(0, 0),
     } = {},
   ) {
     this.name = name;
-    this.position = position;
-    this.velocity = new Point(0, 0);
+    this.position = startPosition;
+    this.velocity = startVelocity;
     this.mass = mass;
     this.friction = friction;
     this.orientation = orientation;
     this.angularVelocity = angularVelocity;
-  }
-
-  die() {
-    CollisionManager.unregisterBody(this);
   }
 
   addForce(force: Force) {
@@ -93,10 +88,6 @@ export class DynamicBody {
 
   clearForces() {
     this._forces = [];
-  }
-
-  attachCollider(c: Collider) {
-    this.collider = c;
   }
 
   public get totalForce() {
