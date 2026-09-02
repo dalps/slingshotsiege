@@ -144,7 +144,7 @@ export class Spawner {
         .add(
           new Hunter(),
           new DynamicBody(
-            new Point(Math.random() * cw, lerp(0, ch * 0.5, Math.random())),
+            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
           ),
           new Sprite(drawEnemy),
         );

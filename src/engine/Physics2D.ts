@@ -115,16 +115,12 @@ export class DynamicBody {
     this.fixed = !this.fixed;
   }
 
-  debugVelocity(color = "yellow") {
-    popsicle(this.position, this.position.add(this.velocity), color);
-  }
-
-  debugAcceleration(color = "green") {
-    popsicle(this.position, this.position.add(this.acceleration), color);
-  }
-
-  debugForce(color = "red") {
-    popsicle(this.position, this.position.add(this.totalForce), color);
+  debug(...colors: (string | null)[]) {
+    [this.velocity, this.acceleration, this.totalForce].forEach(
+      (vector, idx) =>
+        colors[idx] &&
+        popsicle(this.position, this.position.add(vector), colors[idx]),
+    );
   }
 }
 

@@ -1,6 +1,6 @@
 import ecs from "./ecs";
 import { DragInput, Hunter, Prey, Sprite, Weapon } from "./engine/components";
-import { ElasticLine, Joint } from "./engine/ElasticLine";
+import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
 import { Stage } from "./engine/Stage";
 import {
@@ -25,7 +25,6 @@ registerComponents(
   DynamicBody,
   SlingshotFrame,
   DragInput,
-  Joint,
   ElasticLine,
   Weapon,
   Sprite,
