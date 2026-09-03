@@ -19,10 +19,10 @@ export function drawEnemy(e: Entity) {
   ctx.fillStyle = "#222";
 
   ctx.translate(position.x, position.y);
-  ctx.fillText(`${hunterData.distance?.toPrecision(5)}`, -size.x * 0.5, 100);
+  // ctx.fillText(`${hunterData.distance?.toPrecision(5)}`, -size.x * 0.5, 100);
   ctx.rotate(velocity.angle());
   ctx.fillRect(-size.x * 0.5, -size.y * 0.5, size.x, size.y);
   ctx.resetTransform();
 
-  popsicle(position, position.add(velocity), "green");
+  // popsicle(position, position.add(velocity), "green");
 }

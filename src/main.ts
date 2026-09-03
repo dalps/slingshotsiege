@@ -1,8 +1,15 @@
-import ecs from "./ecs";
-import { DragInput, Hunter, Prey, Sprite, Weapon } from "./engine/components";
+import ecs, { Entity } from "./ecs";
+import {
+  DragInput,
+  Hunter,
+  Prey,
+  Score,
+  Sprite,
+  Weapon,
+} from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
-import { Stage } from "./engine/Stage";
+import { LayerName, Stage } from "./engine/Stage";
 import {
   AttackSystem,
   DamageSystem,
@@ -24,6 +31,7 @@ const { registerComponents, createWorld } = ecs;
 registerComponents(
   Hunter,
   Prey,
+  Score,
   DynamicBody,
   SlingshotFrame,
   DragInput,
@@ -57,6 +65,8 @@ function init() {
     );
   });
 
+  const score = world.create().add(new Score(), new Sprite(drawTotalScore));
+
   requestAnimationFrame(loop);
 }
 
@@ -82,3 +92,22 @@ function loop(now: timestamp) {
 }
 
 init();
+
+function drawTotalScore(e: Entity) {
+  const { totalScore }: Score = e.get(Score);
+  const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.Game);
+
+  ctx.font = "bold 32px sans-serif";
+  const text = `Score ${totalScore}`;
+  const metrics = ctx.measureText(text);
+  const margin = 10;
+  const { x, y } = new Point(
+    cw - metrics.width - margin,
+    metrics.emHeightAscent + margin,
+  );
+  ctx.fillStyle = "white";
+  ctx.strokeStyle = "black";
+  ctx.lineWidth = 1;
+  ctx.fillText(text, x, y);
+  ctx.strokeText(text, x, y);
+}

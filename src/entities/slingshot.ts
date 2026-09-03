@@ -1,5 +1,5 @@
 import type { Entity, World } from "../ecs";
-import { DragInput, Sprite, Weapon } from "../engine/components";
+import { DragInput, Sprite, Weapon, WeaponState } from "../engine/components";
 import { ElasticLine } from "../engine/ElasticLine";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
@@ -123,7 +123,7 @@ export class SlingshotFrame {
     weaponBody.fixed = false;
     weaponBody.clearForces();
     weaponBody.addForce(GRAVITY);
-    weaponData.fired = true;
+    weaponData.state = WeaponState.Fired;
 
     // this.weapon = null;
     this.reload();
@@ -236,3 +236,5 @@ export function drawFarGoneWeapon(e: Entity) {
   ctx.fill();
   ctx.resetTransform();
 }
+
+export function drawScore(score: number) {}

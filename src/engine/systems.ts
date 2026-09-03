@@ -3,10 +3,11 @@ import { drawEnemy } from "../entities/enemy";
 import { drawFarGoneWeapon } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Hunter, Prey, Sprite, Weapon } from "./components";
+import { Hunter, Prey, Score, Sprite, Weapon, WeaponState } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
+import { Tween } from "./tween";
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -119,7 +120,7 @@ export class AttackSystem {
 
   update(dt: number) {
     this.weapons.iterate((w, weapon: Weapon, weaponBody: DynamicBody) => {
-      if (!weapon.fired) return;
+      if (weapon.state !== WeaponState.Fired) return;
 
       this.hunter.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
         const distance = weaponBody.position.distance(hunterBody.position);
@@ -136,7 +137,35 @@ export class AttackSystem {
           h.delete();
 
           weapon.points += pointsForKill;
+          this.world
+            .query(Score)
+            .iterate((e, score: Score) => (score.totalScore += pointsForKill));
           weapon.lastKill = now;
+
+          const scoreText = `${weapon.points}`;
+
+          this.world.create().add(
+            new DynamicBody(hunterBody.position, {
+              startVelocity: new Point(0, -10),
+            }),
+            new Sprite((e: Entity) => {
+              const tween = e.get(Tween);
+              const {
+                position: { x, y },
+              }: DynamicBody = e.get(DynamicBody);
+
+              const { ctx } = Stage.setActiveLayer(LayerName.Game);
+              ctx.strokeStyle = "black";
+              ctx.lineWidth = 2;
+              ctx.fillStyle = "yellow";
+              ctx.font = "bold 36px sans-serif";
+              const length = ctx.measureText(scoreText).width * 0.5;
+              // const { x, y } = hunterBody.position;
+              ctx.fillText(scoreText, x - length, y);
+              ctx.strokeText(scoreText, x - length, y);
+            }),
+            new Tween({ speed: 0.5, onComplete: (e) => e.delete() }),
+          );
         }
       });
     });
@@ -154,7 +183,7 @@ export class Spawner {
         .add(
           new Hunter(),
           new DynamicBody(
-            new Point(Math.random() * cw, lerp(0, ch * 0.5, Math.random())),
+            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
           ),
           new Sprite(drawEnemy),
         );
@@ -200,7 +229,7 @@ export class FiredProjectileSystem {
   update() {
     this.firedWeapons.iterate(
       (entity, weapon: Weapon, weaponBody: DynamicBody) => {
-        if (!weapon.fired) return;
+        if (weapon.state !== WeaponState.Fired) return;
 
         const { position, velocity } = weaponBody;
 
@@ -214,6 +243,7 @@ export class FiredProjectileSystem {
         if (position.y < -Stage.ch * 0.5 && Math.abs(angle) - 180 < 25) {
           // Replace the sprite
           // console.log("Replacing sprite...");
+          weapon.state = WeaponState.Used;
           weaponBody.clearForces();
           weaponBody.addForce(new Force(new Point(0, 1), 5));
           entity.remove(Sprite);

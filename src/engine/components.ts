@@ -29,19 +29,24 @@ export class Hunter {
   }
 }
 
+export const enum WeaponState {
+  Ready,
+  Fired,
+  Used,
+}
+
 export class Weapon {
   lastKill: timestamp = NaN;
+  state = WeaponState.Ready;
   points = 0;
   radius = 10;
   height = 80;
-
-  constructor(public fired = false) {}
 }
 
 export class Sprite {
   transparency = 1;
   scale = 1;
-  
+
   constructor(public draw: DrawFn) {}
 }
 
@@ -136,4 +141,8 @@ export class DragInput {
       ui.removeEventListener("touchend", handleTouchEnd);
     };
   }
+}
+
+export class Score {
+  constructor(public totalScore = 0) {}
 }
