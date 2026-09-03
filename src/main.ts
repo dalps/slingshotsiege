@@ -9,6 +9,7 @@ import {
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
+import { huguesNo5, zzfxP } from "./engine/sfx";
 import { LayerName, Stage } from "./engine/Stage";
 import {
   AttackSystem,
@@ -19,6 +20,7 @@ import {
   TargetingSystem,
 } from "./engine/systems";
 import { Tween, TweenSystem } from "./engine/tween";
+import { zzfxM } from "./engine/zzfxm";
 import { drawFoal } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { Castle } from "./scenes/Castle";
@@ -66,6 +68,9 @@ function init() {
   });
 
   const score = world.create().add(new Score(), new Sprite(drawTotalScore));
+
+  const songData = zzfxM(...huguesNo5);
+  const audioNode = zzfxP(...songData);
 
   requestAnimationFrame(loop);
 }

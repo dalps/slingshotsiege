@@ -6,8 +6,10 @@ import { Point } from "../utils/Point";
 import { Hunter, Prey, Score, Sprite, Weapon, WeaponState } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force, GRAVITY } from "./Physics2D";
+import { SoundLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
 import { Tween } from "./tween";
+import { zzfx, zzfxP } from "./zzfx";
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -133,6 +135,7 @@ export class AttackSystem {
             ? weapon.points
             : this.firstKillPoints;
 
+          zzfxP(SoundLibrary.explosion);
           deathParticles(this.world, hunterBody.position);
           h.delete();
 
@@ -252,6 +255,36 @@ export class FiredProjectileSystem {
         // todo: Remove when below the screen area
       },
     );
+  }
+}
+
+export const enum GameState {
+  Menu,
+  Ongoing,
+  Over,
+}
+
+export class GameCycle {
+  totalLives = 0;
+  preys: Query;
+  gameState = GameState.Ongoing;
+
+  constructor(world: World) {
+    this.preys = world.query(Prey);
+  }
+
+  update(dt: number) {
+    let totalLives = 0;
+
+    this.preys.iterate((e, preyData: Prey) => {
+      totalLives += preyData.lives;
+    });
+
+    this.totalLives = totalLives;
+
+    if (totalLives <= 0) {
+      this.gameState = GameState.Over;
+    }
   }
 }
 
