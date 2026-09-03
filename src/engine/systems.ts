@@ -1,9 +1,10 @@
-import type { Entity, Query, World } from "../ecs";
-import { drawEnemy } from "../entities/Enemy";
-import { drawFarGoneWeapon } from "../entities/Sling";
+import { World, type Entity, type Query } from "../ecs";
+import { drawEnemy } from "../entities/enemy";
+import { drawFarGoneWeapon } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Hunter, Prey, Sprite, Weapon } from "./components";
+import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
@@ -64,10 +65,12 @@ export class TargetingSystem {
 }
 
 export class DamageSystem {
+  world: World;
   hunters: Query;
   bounties: Query;
 
   constructor(world: World) {
+    this.world = world;
     this.bounties = world.query(Prey, DynamicBody);
     this.hunters = world.query(Hunter, DynamicBody);
   }
@@ -76,11 +79,15 @@ export class DamageSystem {
     this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
       if (hunter.target?.exists && hunter.distance! < 20) {
         const preyEntity = hunter.target!;
-        const preyData = preyEntity.get(Prey)! as Prey;
+        const [preyData, preyBody]: [Prey, DynamicBody] = preyEntity.get(
+          Prey,
+          DynamicBody,
+        )!;
 
         h.delete();
 
         preyData.lives = Math.max(0, preyData.lives - 1);
+        bloodParticles(this.world, preyBody.position);
         // todo: violently shake + blood particles
 
         if (preyData.lives <= 0) {
@@ -102,8 +109,10 @@ export class AttackSystem {
 
   weapons: Query;
   hunter: Query;
+  world: World;
 
   constructor(world: World) {
+    this.world = world;
     this.weapons = world.query(Weapon, DynamicBody);
     this.hunter = world.query(Hunter, DynamicBody);
   }
@@ -123,7 +132,7 @@ export class AttackSystem {
             ? weapon.points
             : this.firstKillPoints;
 
-          console.log("Impaled!!!");
+          deathParticles(this.world, hunterBody.position);
           h.delete();
 
           weapon.points += pointsForKill;
@@ -145,7 +154,7 @@ export class Spawner {
         .add(
           new Hunter(),
           new DynamicBody(
-            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
+            new Point(Math.random() * cw, lerp(0, ch * 0.5, Math.random())),
           ),
           new Sprite(drawEnemy),
         );
@@ -194,14 +203,19 @@ export class FiredProjectileSystem {
         if (!weapon.fired) return;
 
         const { position, velocity } = weaponBody;
+
+        if (position.y > Stage.ch * 1.5) {
+          entity.delete();
+        }
+
         const angle = velocity.angle() * RAD2DEG; // 0 points up, -180 (anticlockwise) and 180 (clockwise) both point down
 
         // Make sure it's traveling straight down, to an extent, before deleting it
         if (position.y < -Stage.ch * 0.5 && Math.abs(angle) - 180 < 25) {
           // Replace the sprite
           // console.log("Replacing sprite...");
-          weaponBody.clearForces()
-          weaponBody.addForce(new Force(new Point(0,1), 5))
+          weaponBody.clearForces();
+          weaponBody.addForce(new Force(new Point(0, 1), 5));
           entity.remove(Sprite);
           entity.add(new Sprite(drawFarGoneWeapon));
         }

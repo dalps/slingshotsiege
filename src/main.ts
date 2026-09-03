@@ -11,8 +11,9 @@ import {
   Spawner,
   TargetingSystem,
 } from "./engine/systems";
-import { drawFoal } from "./entities/Foal";
-import { createSlingshot, SlingshotFrame } from "./entities/Sling";
+import { Tween, TweenSystem } from "./engine/tween";
+import { drawFoal } from "./entities/foal";
+import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
@@ -28,6 +29,7 @@ registerComponents(
   DragInput,
   ElasticLine,
   Weapon,
+  Tween,
   Sprite,
 );
 
@@ -60,6 +62,7 @@ function init() {
 
 const pipeline = [
   new DynamicBodySystem(world),
+  new TweenSystem(world),
   new TargetingSystem(world),
   new AttackSystem(world),
   new DamageSystem(world),

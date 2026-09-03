@@ -39,6 +39,9 @@ export class Weapon {
 }
 
 export class Sprite {
+  transparency = 1;
+  scale = 1;
+  
   constructor(public draw: DrawFn) {}
 }
 

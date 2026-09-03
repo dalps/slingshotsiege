@@ -38,7 +38,7 @@ export class RGBColor extends Color {
   }
 
   toString() {
-    return `hsla(${this.r},${this.g}%,${this.b}%,${this.alpha})`;
+    return `rgba(${this.r},${this.g},${this.b},${this.alpha})`;
   }
 }
 
