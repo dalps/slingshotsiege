@@ -10,7 +10,7 @@ import {
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
-import { huguesNo5, zzfxP } from "./engine/sfx";
+import { huguesNo5 } from "./engine/sfx";
 import { LayerName, Stage } from "./engine/Stage";
 import {
   AttackSystem,
@@ -20,7 +20,6 @@ import {
   Spawner,
   TargetingSystem,
 } from "./engine/systems";
-import { Tween, TweenSystem } from "./engine/tween";
 import { zzfxM } from "./engine/zzfxm";
 import { drawFoal } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
@@ -28,7 +27,12 @@ import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
-import { ClockSystem, Timer, type timestamp } from "./utils/TimeUtils";
+import {
+  TIME_SCALE,
+  Transform,
+  TransformSystem,
+  type timestamp,
+} from "./utils/TimeUtils";
 
 const { registerComponents, createWorld } = ecs;
 
@@ -41,9 +45,8 @@ registerComponents(
   DragInput,
   ElasticLine,
   Weapon,
-  Tween,
   Unicorn,
-  Timer,
+  Transform,
   Sprite,
 );
 
@@ -89,8 +92,7 @@ function init() {
 
 const pipeline = [
   new DynamicBodySystem(world),
-  new ClockSystem(world),
-  new TweenSystem(world),
+  new TransformSystem(world),
   new TargetingSystem(world),
   new AttackSystem(world),
   new DamageSystem(world),
@@ -102,10 +104,15 @@ const pipeline = [
 let last = performance.now();
 
 function loop(now: timestamp) {
-  const delta = now - last;
+  let delta = now - last;
   last = now;
 
-  world.update(pipeline, delta * 0.01);
+  // Don't let delta get too big (happens e.g. when the user switches tab)
+  if (delta > 1000) {
+    delta = 1000 / 60;
+  }
+
+  world.update(pipeline, delta * TIME_SCALE);
   requestAnimationFrame(loop);
 }
 

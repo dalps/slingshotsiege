@@ -1,11 +1,11 @@
 import type { Entity, World } from "../ecs";
 import { DEG2RAD, lerp } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { hsl, HSLColor, rgba } from "./color";
+import { Transform } from "../utils/TimeUtils";
+import { rgba } from "./color";
 import { Sprite } from "./components";
 import { DynamicBody, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
-import { Tween } from "./tween";
 
 export function deathParticles(world: World, position: Point) {
   function drawCircle(e: Entity) {
@@ -33,12 +33,12 @@ export function deathParticles(world: World, position: Point) {
       new DynamicBody(position.clone(), {
         startVelocity,
       }),
-      new Tween({
-        speed: 2,
-        onComplete(e) {
+      new Transform({
+        duration: 1 / 3,
+        end(e) {
           e.delete();
         },
-        onUpdate(e, t) {
+        update(e, t) {
           const sprite: Sprite = e.get(Sprite);
           sprite.transparency = 1 - t;
           sprite.scale *= t;
@@ -80,12 +80,12 @@ export function bloodParticles(world: World, position: Point) {
 
     world.create().add(
       body,
-      new Tween({
-        speed: 0.5,
-        onComplete(e) {
+      new Transform({
+        duration: 0.5,
+        end(e) {
           e.delete();
         },
-        onUpdate(e, t) {
+        update(e, t) {
           const sprite: Sprite = e.get(Sprite);
           sprite.transparency = 1 - t;
           sprite.scale *= t;

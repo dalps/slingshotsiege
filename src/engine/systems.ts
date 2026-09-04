@@ -3,7 +3,7 @@ import { drawEnemy } from "../entities/enemy";
 import { drawFarGoneWeapon } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Timer } from "../utils/TimeUtils";
+import { Interval, Timeout, Transform } from "../utils/TimeUtils";
 import {
   Hunter,
   Prey,
@@ -15,11 +15,10 @@ import {
   WeaponState,
 } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
-import { DynamicBody, Force, GRAVITY } from "./Physics2D";
+import { DynamicBody, Force } from "./Physics2D";
 import { SoundLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
-import { Tween } from "./tween";
-import { zzfx, zzfxP } from "./zzfx";
+import { zzfxP } from "./zzfx";
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -116,7 +115,7 @@ export class DamageSystem {
           this.unicorn.iterate((e, unicornData: Unicorn) => {
             unicornData.expression = UnicornEmote.Anguished;
             e.add(
-              new Timer(2000, () => {
+              Timeout(1, () => {
                 unicornData.expression = UnicornEmote.Furious;
               }),
             );
@@ -177,7 +176,6 @@ export class AttackSystem {
               startVelocity: new Point(0, -10),
             }),
             new Sprite((e: Entity) => {
-              const tween = e.get(Tween);
               const {
                 position: { x, y },
               }: DynamicBody = e.get(DynamicBody);
@@ -192,7 +190,7 @@ export class AttackSystem {
               ctx.fillText(scoreText, x - length, y);
               ctx.strokeText(scoreText, x - length, y);
             }),
-            new Tween({ speed: 0.5, onComplete: (e) => e.delete() }),
+            new Transform({ duration: 1, end: (e) => e.delete() }),
           );
         }
       });
@@ -201,25 +199,27 @@ export class AttackSystem {
 }
 
 export class Spawner {
-  interval: number;
+  interval: Entity;
 
   constructor(public world: World) {
-    this.interval = setInterval(() => {
-      const { cw, ch } = Stage.setActiveLayer("game");
-      world
-        .create()
-        .add(
-          new Hunter(),
-          new DynamicBody(
-            new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
-          ),
-          new Sprite(drawEnemy),
-        );
-    }, 1000);
+    this.interval = world.create().add(
+      Interval(1, () => {
+        const { cw, ch } = Stage.setActiveLayer("game");
+        world
+          .create()
+          .add(
+            new Hunter(),
+            new DynamicBody(
+              new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
+            ),
+            new Sprite(drawEnemy),
+          );
+      }),
+    );
   }
 
   stop() {
-    clearInterval(this.interval);
+    this.interval.delete();
   }
 
   update() {
