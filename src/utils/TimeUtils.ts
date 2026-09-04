@@ -41,7 +41,7 @@ export class ClockSystem {
 
       if (t.elapsed >= t.delay) {
         t.callback();
-        timer.delete();
+        timer.remove(Timer);
       }
     });
 

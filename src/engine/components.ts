@@ -146,3 +146,20 @@ export class DragInput {
 export class Score {
   constructor(public totalScore = 0) {}
 }
+
+export const enum UnicornEmote {
+  Content,
+  Furious,
+  Anguished,
+}
+
+export class Unicorn {
+  expression = UnicornEmote.Content;
+  headTilt = 0;
+  boundingBoxSize = new Point(200);
+  horn: Entity | null = null;
+
+  getPissed() {
+    this.expression = UnicornEmote.Furious;
+  }
+}

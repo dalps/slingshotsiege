@@ -1,11 +1,15 @@
-import { Stage } from "../engine/Stage";
+import type { Entity } from "../ecs";
+import { Unicorn, UnicornEmote } from "../engine/components";
+import { DynamicBody } from "../engine/Physics2D";
+import { LayerName, Stage } from "../engine/Stage";
+import { circle } from "../utils/CanvasUtils";
+import { Point } from "../utils/Point";
 
-const makePart = (pathData: string, color: string | string[]) => ({
-  path: new Path2D(pathData),
-  color,
-});
+const WHITE = "#fff";
+const BLACK = "#000";
+const RED = "#f00";
 
-let rainbowColors = [
+const PASTEL_RAINBOW = [
   "#ff49db",
   "#bab3ff",
   "#60f6ff",
@@ -14,45 +18,155 @@ let rainbowColors = [
   "#ff8686",
 ];
 
+const makePart = (pathData: string, color: string | string[]) => ({
+  path: new Path2D(pathData),
+  color,
+});
+
 const makeGradient = () => {
   const { ctx, cw, ch } = Stage;
   let rainbowGradient = ctx.createLinearGradient(0, 0, cw, ch);
-  rainbowColors.forEach((s, i) => {
-    rainbowGradient.addColorStop(i / rainbowColors.length, s);
+  PASTEL_RAINBOW.forEach((s, i) => {
+    rainbowGradient.addColorStop(i / PASTEL_RAINBOW.length, s);
   });
 };
 
 const UnicornParts = {
   body: makePart(
-    `m 198.3,266.3 -12.9,20 -8.4,100.8 H 162.8 l 6.9,-29.4 -15,-68.1 -2.3,-8.1 -12.3,1.1 A 158.7,158.7 3.6 0 1 93.5,279.7 l -38.9,-8.3 -8,6.1 a 72.1,72.1 133.6 0 0 -15.1,15.9 l -9.3,13.3 -5.1,44.7 1.9,35.7 H 8.2 L 0,286.2 -7.9,276.5 a 35.7,35.7 69.8 0 1 -8,-21.7 l -0.4,-17.9 a 45.5,45.5 109.3 0 1 10.5,-30 l 6.7,-8 A 47.3,47.3 158.5 0 1 43.2,182.1 l 52.6,6.7 a 84.7,84.7 177 0 0 30.3,-1.6 l 26.2,-6.2 11.4,-56.9 50.8,12 -4.4,14.4 0.6,35 0.6,35.2 a 81.4,81.4 106 0 1 -13,45.6 z`,
-    "#fff",
+    `M 69.5 66.3 L 65.9 71.9 L 63.6 100 L 59.6 100 L 61.6 91.8 L 57.4 72.8 L 56.7 70.5 L 53.3 70.8 C 49 71.2 44.6 70.9 40.3 70 L 29.4 67.7 L 27.2 69.4 C 25.6 70.7 24.2 72.2 23 73.8 L 20.4 77.6 L 19 90 L 19.5 100 L 16.5 100 L 14.2 71.8 L 12 69.1 C 10.6 67.4 9.8 65.3 9.8 63.1 L 9.7 58.1 C 9.6 55 10.6 52 12.6 49.7 L 14.5 47.5 C 17.3 44 21.8 42.2 26.3 42.8 L 40.9 44.7 C 43.8 45 46.6 44.9 49.4 44.2 L 56.7 42.5 L 59.9 26.6 L 74.1 30 L 72.8 34 L 73 43.7 L 73.2 53.6 C 73.3 58.1 72 62.5 69.5 66.3 Z`,
+    WHITE,
   ),
   head: makePart(
-    `m 163.7,124.2 37.9,-44.5 0.2,19.4 20.6,7 45.3,31 a 11.6,11.6 71.1 0 1 4.5,13.1 l -1.9,5.8 a 15.1,15.1 154.1 0 1 -19.6,9.6 L 210.2,150.5 Z`,
-    "#fff",
+    `M 59.9 26.6 L 70.5 14.2 L 70.5 19.6 L 76.3 21.6 L 88.9 30.2 C 90.1 31 90.6 32.5 90.2 33.9 L 89.7 35.5 C 89.3 36.6 88.5 37.5 87.5 38 C 86.4 38.5 85.3 38.6 84.2 38.2 L 72.8 34 Z`,
+    WHITE,
   ),
   tail: makePart(
-    `m -289.8,216.7 0.3,13 a 22.8,22.8 110.2 0 1 -5.8,15.6 l -6,6.8 a 48.8,48.8 106.9 0 0 -11.9,39 l 1.8,13 a 25.4,25.4 108.5 0 1 -7.2,21.3 l -18.8,18.9 a 3.2,3.2 30.3 0 1 -5.4,-3.2 l 3.3,-11.5 a 57,57 90.6 0 0 0.3,-30.1 l -4.5,-17 a 17.5,17.5 107.7 0 1 5.7,-17.9 l 4.9,-4.1 a 24.5,24.5 115.7 0 0 8.8,-18.3 l 0.3,-15.9 a 12.3,12.3 138.8 0 1 13.7,-12 z`,
-    rainbowColors,
+    `M 17.1 45.1 L 17.1 48.7 C 17.2 50.3 16.6 51.8 15.5 53 L 13.9 54.9 C 11.2 57.9 10 61.9 10.5 65.8 L 11 69.4 C 11.3 71.6 10.6 73.8 9 75.4 L 3.8 80.7 C 3.5 81 3.1 81 2.7 80.8 C 2.4 80.6 2.2 80.2 2.3 79.8 L 3.2 76.6 C 4 73.8 4 70.9 3.3 68.2 L 2 63.4 C 1.6 61.6 2.2 59.7 3.6 58.4 L 5 57.3 C 6.5 56 7.4 54.2 7.5 52.2 L 7.6 47.8 C 7.6 46.8 8 45.9 8.7 45.3 C 9.4 44.6 10.4 44.3 11.4 44.4 Z`,
+    PASTEL_RAINBOW,
   ),
-  hairAroundHorn: makePart(
-    `m -98.4,125.6 -3.2,3.9 a 2.8,2.8 63 0 0 2.3,4.6 l 6.5,-0.3 a 10.2,10.2 19.4 0 1 7.4,2.6 l 13.2,11.8 a 4.3,4.3 160 0 0 7.1,-2.6 l 0.6,-4 2.6,-3.1 a 2.7,2.7 68 0 0 -1.8,-4.5 l -5.5,-0.6 a 76.7,76.7 12.3 0 1 -16.7,-3.6 l -2.2,-0.7 -0.1,-0 z`,
-    rainbowColors,
+  foretop: makePart(
+    `M 70.5 19.6 L 69.6 20.7 C 69.4 21 69.4 21.3 69.6 21.6 C 69.7 21.8 70 22 70.3 22 L 72.1 21.9 C 72.9 21.9 73.6 22.1 74.2 22.6 L 77.8 25.9 C 78.2 26.2 78.6 26.3 79 26.2 C 79.5 26 79.8 25.6 79.8 25.2 L 80 24.1 L 80.7 23.2 C 80.9 23 80.9 22.7 80.8 22.5 C 80.7 22.2 80.5 22 80.2 22 L 78.7 21.8 C 77.1 21.7 75.5 21.3 74 20.8 L 73.4 20.6 L 73.4 20.6 Z`,
+    PASTEL_RAINBOW,
   ),
-  hairOnNeck: makePart(
-    `m -148.6,155.8 0.4,10.9 a 14.6,14.6 114.6 0 1 -5.5,12 l -6.9,5.5 a 33.5,33.5 129.9 0 0 -8.6,10.2 l -11.1,20.5 9.2,-0.7 a 12.9,12.9 30.7 0 1 12.8,7.6 l 0.6,1.2 a 9.1,9.1 1.5 0 0 16.4,0.4 l 8.3,-16.2 a 10.1,10.1 134.9 0 0 11.6,-11.6 l -1.9,-24.5 1.6,-3.1 a 12.1,12.1 69.9 0 0 -6,-16.5 l -8.9,-3.9 a 8.5,8.5 145.6 0 0 -11.8,8.1 z`,
-    rainbowColors,
+  maneBottom: makePart(
+    `M 56.5 28.1 L 56.6 31.1 C 56.7 32.4 56.1 33.6 55.1 34.5 L 53.2 36 C 52.2 36.8 51.4 37.7 50.8 38.8 L 47.7 44.6 L 50.3 44.4 C 51.8 44.3 53.2 45.1 53.8 46.5 L 54 46.8 C 54.4 47.7 55.3 48.3 56.2 48.3 C 57.2 48.4 58.1 47.8 58.6 47 L 60.9 42.4 C 61.8 42.6 62.7 42.3 63.3 41.7 C 64 41 64.3 40.1 64.1 39.2 L 63.6 32.4 L 64 31.5 C 64.4 30.6 64.5 29.7 64.2 28.8 C 63.8 27.9 63.2 27.2 62.3 26.9 L 59.8 25.8 C 59.1 25.5 58.2 25.6 57.6 26 C 56.9 26.5 56.5 27.3 56.5 28.1 Z`,
+    PASTEL_RAINBOW,
   ),
-  hairOnhead: makePart(
-    `m -113.5,123.6 -23.7,12.5 a 21.3,21.3 120 0 0 -11.4,19.7 l 0.4,10.9 a 14.6,14.6 114.6 0 1 -5.5,12 l -6.9,5.5 a 11.7,11.7 111.3 0 0 -4.3,11 l 2.9,18.4 4.3,9.5 a 9.1,9.1 1.5 0 0 16.4,0.4 l 8.3,-16.2 a 10.1,10.1 134.9 0 0 11.6,-11.6 l -1.9,-24.5 a 19.3,19.3 117.6 0 0 9.5,-18.2 z`,
-    rainbowColors,
+  maneTop: makePart(
+    `M 66.3 19.1 L 59.7 22.6 C 57.7 23.6 56.4 25.8 56.5 28.1 L 56.6 31.1 C 56.7 32.4 56.1 33.6 55.1 34.5 L 53.2 36 C 52.3 36.7 51.8 37.9 52 39 L 52.8 44.2 L 54 46.8 C 54.4 47.7 55.3 48.3 56.2 48.3 C 57.2 48.4 58.1 47.8 58.6 47 L 60.9 42.4 C 61.8 42.6 62.7 42.3 63.3 41.7 C 64 41 64.3 40.1 64.1 39.2 L 63.6 32.4 C 65.4 31.3 66.4 29.3 66.2 27.3 Z`,
+    PASTEL_RAINBOW,
   ),
   nose: makePart(
-    `m -42.3,156.8 -19.2,30.8 11.8,4.5 a 16.9,16.9 157.3 0 0 21.4,-9 l 1.8,-4 a 13.4,13.4 70.5 0 0 -6.1,-17.3 z`,
+    `M 86.2 28.4 L 80.8 36.9 L 84.1 38.2 C 86.5 39.1 89.1 38 90.1 35.7 L 90.6 34.6 C 91.4 32.8 90.6 30.6 88.9 29.7 Z`,
     "#ffbfaf",
   ),
   nostril: makePart(
-    `m -31.8,169.5 a 4.5,2.3 41.8 0 1 -4.9,-1.2 4.5,2.3 41.8 0 1 -1.8,-4.7 4.5,2.3 41.8 0 1 4.9,1.2 4.5,2.3 41.8 0 1 1.8,4.7 z`,
+    `M 89.1 31.9 C 88.9 32.1 88.3 32 87.8 31.5 C 87.2 31.1 87 30.5 87.3 30.2 C 87.5 29.9 88.1 30.1 88.6 30.6 C 89.1 31 89.4 31.6 89.1 31.9 Z`,
     "#b69188",
   ),
 };
+
+const UnicornExpressions: Record<
+  string,
+  { fill: ReturnType<typeof makePart>[]; stroke: ReturnType<typeof makePart>[] }
+> = {
+  happy: {
+    fill: [],
+    stroke: [
+      makePart(
+        `m 72.7,27.6
+c 2.8,-2.2 1.2,-2.5 4,0.2
+
+M 87.9,37.8
+c 0,0 -2.1,-0.2 -4.8,-1.4`,
+        BLACK,
+      ),
+    ],
+  },
+  angry: {
+    fill: [
+      makePart(
+        `m 70,23.8
+c 0,0 4.5,3.8 8.7,2.2 -0.6,1.9 -2.3,3.1 -4.2,2.7 -3.9,-0.9 -4.5,-4.9 -4.5,-4.9
+z`,
+        RED,
+      ),
+      makePart(
+        `m 75.6,27.4
+a 0.6,1.3 0 0 1 -0.6,1.3 0.6,1.3 0 0 1 -0.6,-1.3 0.6,1.3 0 0 1 0.6,-1.3 0.6,1.3 0 0 1 0.6,1.3
+z`,
+        BLACK,
+      ),
+    ],
+    stroke: [
+      makePart(
+        `m 70,23.8
+c 0,0 4.5,3.8 8.7,2.2
+
+m 9.2,11.8
+c 0,0 -2.7,-4 -4.8,-1.4`,
+        BLACK,
+      ),
+    ],
+  },
+  sad: {
+    fill: [],
+    stroke: [
+      makePart(
+        `m 74.5,29.4 2.4,-2
+  
+  m -3.7,0.4 3.7,-0.4
+  
+  m -2.9,-1.9 2.9,1.9
+  
+  M 87.9,37.8
+  c 0,0 -1.6,-1.8 -4.8,-1.4`,
+        BLACK,
+      ),
+    ],
+  },
+};
+
+export function drawUnicorn(e: Entity) {
+  const unicornData: Unicorn = e.get(Unicorn);
+  const { position: p }: DynamicBody = e.get(DynamicBody);
+
+  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_2);
+  let rainbowGradient = ctx.createLinearGradient(0, 0, cw, ch);
+  PASTEL_RAINBOW.forEach((s, i) => {
+    rainbowGradient.addColorStop(i / PASTEL_RAINBOW.length, s);
+  });
+
+  const size = new Point(100);
+  ctx.translate(p.x, p.y);
+  const scale = 2;
+  ctx.scale(scale, scale);
+  ctx.translate(-size.x * 0.5, -size.y);
+
+  Object.entries(UnicornParts).forEach(([name, { path, color }]) => {
+    ctx.fillStyle = color instanceof Array ? rainbowGradient : color;
+    ctx.fill(path);
+  });
+
+  // The head and facial expression.
+  const currentExpression = [...Object.values(UnicornExpressions)][
+    unicornData.expression
+  ];
+
+  for (const { path, color } of currentExpression.fill) {
+    ctx.fillStyle = color instanceof Array ? rainbowGradient : color;
+    ctx.fill(path);
+  }
+
+  for (const { path, color } of currentExpression.stroke) {
+    ctx.lineCap = "round";
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = color instanceof Array ? rainbowGradient : color;
+    ctx.stroke(path);
+  }
+
+  ctx.strokeStyle = "green";
+  ctx.strokeRect(0, 0, size.x, size.y);
+  circle(p, 5);
+  ctx.resetTransform();
+}

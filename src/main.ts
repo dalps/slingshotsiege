@@ -5,6 +5,7 @@ import {
   Prey,
   Score,
   Sprite,
+  Unicorn,
   Weapon,
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
@@ -23,10 +24,11 @@ import { Tween, TweenSystem } from "./engine/tween";
 import { zzfxM } from "./engine/zzfxm";
 import { drawFoal } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
+import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
-import { type timestamp } from "./utils/TimeUtils";
+import { ClockSystem, Timer, type timestamp } from "./utils/TimeUtils";
 
 const { registerComponents, createWorld } = ecs;
 
@@ -40,6 +42,8 @@ registerComponents(
   ElasticLine,
   Weapon,
   Tween,
+  Unicorn,
+  Timer,
   Sprite,
 );
 
@@ -67,16 +71,25 @@ function init() {
     );
   });
 
+  const unicorn = world.create().add(
+    new DynamicBody(new Point(200, ch * 0.7), {
+      // startVelocity: new Point(2, 0),
+    }),
+    new Unicorn(),
+    new Sprite(drawUnicorn),
+  );
+
   const score = world.create().add(new Score(), new Sprite(drawTotalScore));
 
   const songData = zzfxM(...huguesNo5);
-  const audioNode = zzfxP(...songData);
+  // const audioNode = zzfxP(...songData);
 
   requestAnimationFrame(loop);
 }
 
 const pipeline = [
   new DynamicBodySystem(world),
+  new ClockSystem(world),
   new TweenSystem(world),
   new TargetingSystem(world),
   new AttackSystem(world),

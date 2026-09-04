@@ -3,7 +3,17 @@ import { drawEnemy } from "../entities/enemy";
 import { drawFarGoneWeapon } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Hunter, Prey, Score, Sprite, Weapon, WeaponState } from "./components";
+import { Timer } from "../utils/TimeUtils";
+import {
+  Hunter,
+  Prey,
+  Score,
+  Sprite,
+  Unicorn,
+  UnicornEmote,
+  Weapon,
+  WeaponState,
+} from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force, GRAVITY } from "./Physics2D";
 import { SoundLibrary } from "./sfx";
@@ -71,11 +81,13 @@ export class DamageSystem {
   world: World;
   hunters: Query;
   bounties: Query;
+  unicorn: Query;
 
   constructor(world: World) {
     this.world = world;
     this.bounties = world.query(Prey, DynamicBody);
     this.hunters = world.query(Hunter, DynamicBody);
+    this.unicorn = this.world.query(Unicorn);
   }
 
   update() {
@@ -89,6 +101,10 @@ export class DamageSystem {
 
         h.delete();
 
+        this.unicorn.iterate((e, unicornData: Unicorn) => {
+          unicornData.getPissed();
+        });
+
         preyData.lives = Math.max(0, preyData.lives - 1);
         bloodParticles(this.world, preyBody.position);
         // todo: violently shake + blood particles
@@ -96,6 +112,15 @@ export class DamageSystem {
         if (preyData.lives <= 0) {
           preyEntity.delete();
           // todo: display carcass sprite
+
+          this.unicorn.iterate((e, unicornData: Unicorn) => {
+            unicornData.expression = UnicornEmote.Anguished;
+            e.add(
+              new Timer(2000, () => {
+                unicornData.expression = UnicornEmote.Furious;
+              }),
+            );
+          });
         }
       }
     });
