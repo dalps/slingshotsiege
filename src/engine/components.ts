@@ -1,7 +1,9 @@
-import type { Entity } from "../ecs";
+import type { Entity, World } from "../ecs";
+import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
+import { lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import type { timestamp } from "../utils/TimeUtils";
-import type { Force } from "./Physics2D";
+import { Transform, type timestamp } from "../utils/TimeUtils";
+import { DynamicBody } from "./Physics2D";
 import { Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
@@ -14,9 +16,9 @@ export class Prey {
 
   constructor(public targeted = true) {}
 
-  destructor() {
-    console.log("Prey killed.");
-  }
+  // destructor() {
+  //   console.log("Prey killed.");
+  // }
 }
 
 export class Hunter {
@@ -24,9 +26,9 @@ export class Hunter {
   distance: number | null = null;
   speed: number = 20;
 
-  destructor() {
-    console.log("Killed a hunter.");
-  }
+  // destructor() {
+  //   console.log("Killed a hunter.");
+  // }
 }
 
 export const enum WeaponState {
@@ -147,19 +149,90 @@ export class Score {
   constructor(public totalScore = 0) {}
 }
 
-export const enum UnicornEmote {
+export const enum UnicornEmotion {
   Content,
   Furious,
   Anguished,
 }
 
 export class Unicorn {
-  expression = UnicornEmote.Content;
+  expression = UnicornEmotion.Content;
   headTilt = 0;
   boundingBoxSize = new Point(200);
   horn: Entity | null = null;
+  hornProgress = 0;
+  hornOrigin = new Point(60, -178);
 
   getPissed() {
-    this.expression = UnicornEmote.Furious;
+    this.expression = UnicornEmotion.Furious;
+  }
+
+  /**
+   * Spawns a new horn
+   */
+  growHorn(world: World) {
+    world.create().add(
+      new Transform({
+        duration: 1,
+        update: (e, stage) => {
+          this.hornProgress = stage;
+        },
+        end: (e) => {
+          this.hornProgress = 1;
+          // world
+          //   .query(SlingshotFrame)
+          //   .iterate((slingshot) => this.passHornToSlingshot(world, slingshot));
+        },
+      }),
+    );
+  }
+
+  /**
+   * Passes ownership of the horn
+   */
+  passHornToSlingshot(world: World, unicorn: Entity, target: Entity) {
+    // if (!this.horn || !this.horn?.exists)
+    //   throw Error("Failure: no horn on unicorn.");
+    // if (this.hornProgress <= 1) {
+    //   // Horn still growing
+    //   return;
+    // }
+
+    const unicornBody: SlingshotFrame = unicorn.get(DynamicBody);
+    const slingshotData: SlingshotFrame = target.get(SlingshotFrame);
+    const handlePosition = slingshotData.handle.get(DynamicBody).position;
+
+    const startPosition = unicornBody.position.add(this.hornOrigin);
+
+    const fakeWeapon = world.create().add(
+      new Weapon(),
+      new DynamicBody(startPosition, {
+        mass: 1,
+        friction: 0.1,
+      }),
+      new Sprite(drawFarGoneWeapon),
+    );
+    this.horn = fakeWeapon;
+
+    slingshotData.weapon = fakeWeapon;
+    const weaponBody: DynamicBody = fakeWeapon.get(DynamicBody);
+    // todo: Remove state from points. State sharing is making this so confusing, make sure points are never updated
+    fakeWeapon.add(
+      new Transform({
+        duration: 0.5,
+        update: (e, t) => {
+          weaponBody.position = lerp2(startPosition, handlePosition, t);
+        },
+        end: () => {
+          this.horn = null;
+          fakeWeapon.delete();
+          slingshotData.reload();
+        },
+      }),
+    );
+
+    // let { horn } = this;
+    // this.hornProgress = 0;
+    // return horn;
   }
 }

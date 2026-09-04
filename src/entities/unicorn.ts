@@ -1,13 +1,13 @@
 import type { Entity } from "../ecs";
-import { Unicorn, UnicornEmote } from "../engine/components";
+import { Unicorn, UnicornEmotion } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { circle } from "../utils/CanvasUtils";
 import { Point } from "../utils/Point";
 
-const WHITE = "#fff";
-const BLACK = "#000";
-const RED = "#f00";
+export const WHITE = "#fff";
+export const BLACK = "#000";
+export const RED = "#f00";
 
 const PASTEL_RAINBOW = [
   "#ff49db",

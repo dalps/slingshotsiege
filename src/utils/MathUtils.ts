@@ -59,12 +59,6 @@ export function lerp2(min: Point, max: Point, t: number): Point {
   return new Point(lerp(min.x, max.x, t), lerp(min.y, max.y, t));
 }
 
-export function lerp2I(min: Point, max: Point, t: number): Point {
-  min.x = lerp(min.x, max.x, t);
-  min.y = lerp(min.y, max.y, t);
-  return min;
-}
-
 export function damp2I(
   current: Point,
   target: Point,

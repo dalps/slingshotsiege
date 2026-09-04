@@ -5,6 +5,7 @@ import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
+import { WHITE } from "./unicorn";
 
 const GRAB_DISTANCE = 65;
 
@@ -73,8 +74,6 @@ export class SlingshotFrame {
         new Sprite(drawWeapon),
       );
     };
-
-    this.reload();
   }
 
   grabCord(pointerPos: Point) {
@@ -105,10 +104,11 @@ export class SlingshotFrame {
   }
 
   release() {
+    if (!this.grabPos || !this.weapon) return;
+
     this.grabPos = null;
     this.shooting = true;
 
-    // if (!this.weapon) return;
 
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
     handleBody.fixed = false; // Let physics govern position now
@@ -125,8 +125,7 @@ export class SlingshotFrame {
     weaponBody.addForce(GRAVITY);
     weaponData.state = WeaponState.Fired;
 
-    // this.weapon = null;
-    this.reload();
+    this.weapon = null;
   }
 }
 
@@ -187,7 +186,7 @@ function drawSlingshotStrips(e: Entity) {
   // });
 }
 
-function drawWeapon(e: Entity) {
+export function drawWeapon(e: Entity) {
   const [weaponData, weaponBody]: [Weapon, DynamicBody] = e.get(
     Weapon,
     DynamicBody,
@@ -200,8 +199,8 @@ function drawWeapon(e: Entity) {
   ctx.translate(p.x, p.y);
   ctx.rotate(v.angle());
   ctx.lineWidth = 5;
-  ctx.strokeStyle = "#444444ff";
-  ctx.fillStyle = "#787878ff";
+  ctx.strokeStyle = "#ccc";
+  ctx.fillStyle = WHITE;
   ctx.beginPath();
   ctx.moveTo(-radius, 0);
   ctx.lineTo(0, -height);

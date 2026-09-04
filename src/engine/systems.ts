@@ -1,6 +1,6 @@
 import { World, type Entity, type Query } from "../ecs";
 import { drawEnemy } from "../entities/enemy";
-import { drawFarGoneWeapon } from "../entities/slingshot";
+import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Interval, Timeout, Transform } from "../utils/TimeUtils";
@@ -10,7 +10,7 @@ import {
   Score,
   Sprite,
   Unicorn,
-  UnicornEmote,
+  UnicornEmotion,
   Weapon,
   WeaponState,
 } from "./components";
@@ -113,10 +113,10 @@ export class DamageSystem {
           // todo: display carcass sprite
 
           this.unicorn.iterate((e, unicornData: Unicorn) => {
-            unicornData.expression = UnicornEmote.Anguished;
+            unicornData.expression = UnicornEmotion.Anguished;
             e.add(
               Timeout(1, () => {
-                unicornData.expression = UnicornEmote.Furious;
+                unicornData.expression = UnicornEmotion.Furious;
               }),
             );
           });
@@ -314,6 +314,24 @@ export class GameCycle {
 }
 
 /**
- * Responsible for reloading the slingshot with weapons.
+ * Responsible for reloading the slingshot with weapons supplied by the unicorns.
  */
-export class ReloadSystem {}
+export class ReloadSystem {
+  slingshot: Query;
+  unicorn: Query;
+
+  constructor(public world: World) {
+    this.slingshot = world.query(SlingshotFrame); // singleton
+    this.unicorn = world.query(Unicorn);
+  }
+
+  update(dt) {
+    this.slingshot.iterate((s, slingshot: SlingshotFrame) =>
+      this.unicorn.iterate((u, unicorn: Unicorn) => {
+        if (!unicorn.horn && !slingshot.weapon) {
+          unicorn.passHornToSlingshot(this.world, u, s);
+        }
+      }),
+    );
+  }
+}

@@ -16,6 +16,7 @@ import {
   AttackSystem,
   DamageSystem,
   FiredProjectileSystem,
+  ReloadSystem,
   Render,
   Spawner,
   TargetingSystem,
@@ -97,6 +98,7 @@ const pipeline = [
   new AttackSystem(world),
   new DamageSystem(world),
   new Spawner(world),
+  new ReloadSystem(world),
   new FiredProjectileSystem(world),
   new Render(world),
 ];
