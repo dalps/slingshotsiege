@@ -5,7 +5,7 @@ import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { WHITE } from "./unicorn";
+import { WHITE } from "../utils/SpriteUtils";
 
 const GRAB_DISTANCE = 65;
 
@@ -108,7 +108,6 @@ export class SlingshotFrame {
 
     this.grabPos = null;
     this.shooting = true;
-
 
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
     handleBody.fixed = false; // Let physics govern position now

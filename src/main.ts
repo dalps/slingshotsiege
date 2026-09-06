@@ -25,15 +25,30 @@ import { zzfxM } from "./engine/zzfxm";
 import { drawFoal } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
+import { getPaths } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
+import { initGradients } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
   Transform,
   TransformSystem,
   type timestamp,
 } from "./utils/TimeUtils";
+import assetsSvg from "/assets.svg?raw";
+
+{
+  document.querySelector("body")?.insertAdjacentHTML("beforeend", assetsSvg);
+
+  getPaths("foal");
+  getPaths("bat");
+  getPaths("wraith");
+  getPaths("adult");
+  getPaths("expressions");
+
+  document.querySelector("svg")?.remove();
+}
 
 const { registerComponents, createWorld } = ecs;
 
@@ -55,6 +70,7 @@ const world = createWorld();
 
 function init() {
   Stage.init();
+  initGradients();
 
   Castle.draw();
   Stage.addResizeListener(Castle.draw);
