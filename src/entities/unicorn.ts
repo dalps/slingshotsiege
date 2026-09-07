@@ -4,7 +4,15 @@ import { Unicorn } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { Point } from "../utils/Point";
-import { BLACK, makePart, none, colors, RED, url } from "../utils/SpriteUtils";
+import {
+  BLACK,
+  colors,
+  drawParts,
+  makePart,
+  RED,
+  url,
+  type DrawingPart,
+} from "../utils/SpriteUtils";
 
 const UnicornParts = {
   body: {
@@ -35,21 +43,9 @@ const UnicornParts = {
     path: new Path2D(`m 196,46 c -1,1 -5,-2 -4,-3 1,-1 5,2 4,3 z`),
     fill: rgb(182, 145, 136),
   },
-  eye: {
-    path: new Path2D(
-      `m 153,29 c 0,0 10,8 20,5 -1,4 -5,7 -10,6 -9,-2 -10,-11 -10,-11 z`,
-    ),
-    fill: rgb(255, 69, 0),
-  },
-  pupil: { path: new Path2D(`m 163,37 c 0,-4 3,-4 3,0 0,4 -3,4 -3,0 z`) },
-  face: {
-    path: new Path2D(`m 153,29 c 0,0 10,9 20,5 m 20,26 c 0,0 -6,-9 -11,-3`),
-    stroke: none,
-  },
   horn: {
-    path: new Path2D(`M 154,19 166.874,23 174,-25 Z`),
+    path: new Path2D(`M 154,19 167,23 174,-25 Z`),
     fill: rgb(255, 250, 250),
-    stroke: rgb(255, 250, 250),
   },
   foretop: {
     path: new Path2D(
@@ -71,66 +67,38 @@ const UnicornParts = {
   },
 };
 
-const UnicornExpressions: Record<
-  string,
-  { fill: ReturnType<typeof makePart>[]; stroke: ReturnType<typeof makePart>[] }
-> = {
-  happy: {
-    fill: [],
-    stroke: [
-      makePart(
-        `m 159,37
-c 6,-5 3,-6 9,0
-
-m 25,23
-c 0,0 -5,0 -11,-3`,
-        BLACK,
-      ),
-    ],
+const UnicornExpressions: Record<string, DrawingPart>[] = [
+  {
+    happy: {
+      path: new Path2D(`m 159,37 c 6,-5 3,-6 9,0 m 25,23 c 0,0 -5,0 -11,-3`),
+      stroke: rgb(0, 0, 0),
+    },
   },
-  angry: {
-    fill: [
-      makePart(
-        `m 153,29
-c 0,0 10,8 20,5 -1,4 -5,7 -10,6 -9,-2 -10,-11 -10,-11
-z`,
-        RED,
+  {
+    sad: {
+      path: new Path2D(
+        `m 163,42 5,-5 m -8,1 8,-1 m -6,-4 6,4 m 25,23 c 0,0 -4,-3 -11,-2`,
       ),
-      makePart(
-        `m 163,37
-c 0,-4 3,-4 3,0 0,4 -3,4 -3,0
-z`,
-        BLACK,
-      ),
-    ],
-    stroke: [
-      makePart(
-        `m 153,29
-c 0,0 10,9 20,5
-
-m 20,26
-c 0,0 -6,-9 -11,-3`,
-        BLACK,
-      ),
-    ],
+      stroke: rgb(0, 0, 0),
+    },
   },
-  sad: {
-    fill: [],
-    stroke: [
-      makePart(
-        `m 163,42 5,-5
-
-m -8,1 8,-1
-
-m -6,-4 6,4
-
-m 25,23
-c 0,0 -4,-3 -11,-2`,
-        BLACK,
+  {
+    eye: {
+      path: new Path2D(
+        `m 153,29 c 0,0 10,8 20,5 -1,4 -5,7 -10,6 -9,-2 -10,-11 -10,-11 z`,
       ),
-    ],
+      fill: rgb(255, 69, 0),
+    },
+    pupil: {
+      path: new Path2D(`m 163,37 c 0,-4 3,-4 3,0 0,4 -3,4 -3,0 z`),
+      fill: rgb(0, 0, 0),
+    },
+    face: {
+      path: new Path2D(`m 153,29 c 0,0 10,9 20,5 m 20,26 c 0,0 -6,-9 -11,-3`),
+      stroke: rgb(0, 0, 0),
+    },
   },
-};
+];
 
 export function drawUnicorn(e: Entity) {
   const unicornData: Unicorn = e.get(Unicorn);
@@ -148,27 +116,10 @@ export function drawUnicorn(e: Entity) {
   // ctx.scale(scale, scale);
   ctx.translate(-size.x * 0.5, -size.y);
 
-  Object.entries(UnicornParts).forEach(([name, { path, color }]) => {
-    ctx.fillStyle = color instanceof Array ? rainbowGradient : color;
-    ctx.fill(path);
-  });
+  drawParts(ctx, UnicornParts);
 
   // The head and facial expression.
-  const currentExpression = [...Object.values(UnicornExpressions)][
-    unicornData.expression
-  ];
-
-  for (const { path, color } of currentExpression.fill) {
-    ctx.fillStyle = color instanceof Array ? rainbowGradient : color;
-    ctx.fill(path);
-  }
-
-  for (const { path, color } of currentExpression.stroke) {
-    ctx.lineCap = "round";
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color instanceof Array ? rainbowGradient : color;
-    ctx.stroke(path);
-  }
+  drawParts(ctx, UnicornExpressions[unicornData.expression]);
 
   // ctx.strokeStyle = "green";
   // ctx.strokeRect(0, 0, size.x, size.y);

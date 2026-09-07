@@ -151,8 +151,8 @@ export class Score {
 
 export const enum UnicornEmotion {
   Content,
-  Furious,
   Anguished,
+  Furious,
 }
 
 export class Unicorn {
