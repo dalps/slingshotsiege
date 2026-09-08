@@ -1,4 +1,5 @@
 import { World, type Entity, type Query } from "../ecs";
+import { drawBat } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
@@ -16,7 +17,7 @@ import {
 } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
-import { SoundLibrary } from "./sfx";
+import { comboSound, SoundLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
 import { zzfxP } from "./zzfx";
 
@@ -106,9 +107,11 @@ export class DamageSystem {
 
         preyData.lives = Math.max(0, preyData.lives - 1);
         bloodParticles(this.world, preyBody.position);
+        zzfxP(SoundLibrary.damage)
         // todo: violently shake + blood particles
-
+        
         if (preyData.lives <= 0) {
+          zzfxP(SoundLibrary.death)
           preyEntity.delete();
           // todo: display carcass sprite
 
@@ -164,6 +167,8 @@ export class AttackSystem {
           h.delete();
 
           weapon.points += pointsForKill;
+          comboSound(Math.log2(weapon.points / 100) * 2);
+
           this.world
             .query(Score)
             .iterate((e, score: Score) => (score.totalScore += pointsForKill));

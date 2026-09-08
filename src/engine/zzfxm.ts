@@ -4,23 +4,11 @@
 
 import { zzfxG, zzfxR } from "./zzfx";
 
-/**
- * @typedef Channel
- * @type {Array.<Number>}
- * @property {Number} 0 - Channel instrument
- * @property {Number} 1 - Channel panning (-1 to +1)
- * @property {Number} 2 - Note
- */
+type Channel = Array<Number>;
 
-/**
- * @typedef Pattern
- * @type {Array.<Channel>}
- */
+type Pattern = Array<Channel>;
 
-/**
- * @typedef Instrument
- * @type {Array.<Number>} ZzFX sound parameters
- */
+type Instrument = Array<Number>;
 
 /**
  * Generate a song
@@ -32,7 +20,7 @@ import { zzfxG, zzfxR } from "./zzfx";
  * @returns {Array.<Array.<Number>>} Left and right channel sample data.
  */
 
-export const zzfxM = (instruments, patterns, sequence, BPM = 125) => {
+export const zzfxM = (instruments: Array<Instrument>, patterns: Array<Pattern>, sequence: Array<number>, BPM = 125): Array<Array<number>> => {
   let instrumentParameters;
   let i;
   let j;
