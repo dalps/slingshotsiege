@@ -7,16 +7,25 @@ import { BLACK, WHITE } from "./SpriteUtils";
 export function drawText(
   text: string,
   position: Point,
-  { fill = WHITE, stroke = BLACK, lineWidth = 1, size = 36, bold = true } = {},
+  {
+    fill = WHITE,
+    stroke = BLACK,
+    lineWidth = 1,
+    size = 36,
+    bold = true,
+    centered = true,
+  } = {},
 ) {
   const { ctx } = Stage.activeLayer;
-  
+
   ctx.font = `${bold ? "bold" : "normal"} ${size}px sans-serif`;
   const metrics = ctx.measureText(text);
   const margin = 10;
+  const center = centered ? 0.5 : 1;
+  // circle(position);
   const { x, y } = new Point(
-    position.x - metrics.width * 0.5 - margin,
-    position.y - metrics.emHeightAscent * 0.5 + margin,
+    position.x - metrics.width * center - margin,
+    position.y + metrics.emHeightAscent * center + margin,
   );
   ctx.fillStyle = fill;
   ctx.strokeStyle = stroke;
@@ -137,7 +146,7 @@ export function popsicle(from: Point, to: Point, color = "black") {
   ctx.fill();
 }
 
-export function circle(p: Point, r: number, color = "blue") {
+export function circle(p: Point, r: number = 5, color = "blue") {
   const { ctx } = Stage;
 
   ctx.resetTransform();

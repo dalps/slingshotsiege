@@ -5,14 +5,17 @@ import { lerp, lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { Interval, Transform, type timestamp } from "../utils/TimeUtils";
 import { DynamicBody } from "./Physics2D";
-import { Stage } from "./Stage";
+import { LayerName, Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
 
 export const START_LIVES = 3;
 
-export class Prey {
+export class Health {
   lives = START_LIVES;
+}
+
+export class Prey {
   radius = 40;
 
   constructor(public targeted = true) {}
@@ -137,6 +140,7 @@ export class DragInput {
     };
 
     this.destructor = () => {
+      console.log("Removing DragInput...");
       ui.removeEventListener("mousedown", handleMouseDown);
       ui.removeEventListener("mousemove", handleMouseMove);
       ui.removeEventListener("mouseup", handleMouseUp);
@@ -256,14 +260,12 @@ export class Spawner {
   constructor(public world: World) {
     this.interval = world.create().add(
       Interval(1, () => {
-        const { cw, ch } = Stage.setActiveLayer("game");
+        const { cw } = Stage.setActiveLayer(LayerName.Game);
         world
           .create()
           .add(
             new Hunter(),
-            new DynamicBody(
-              new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
-            ),
+            new DynamicBody(new Point(Math.random() * cw, 0)),
             new Sprite(drawEnemy),
           );
       }),

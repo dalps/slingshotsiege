@@ -1,22 +1,17 @@
 import { World, type Entity, type Query } from "../ecs";
-import { drawBat } from "../entities/bat";
-import { drawEnemy } from "../entities/enemy";
-import {
-  createSlingshot,
-  drawFarGoneWeapon,
-  SlingshotFrame,
-} from "../entities/slingshot";
-import { skyGradient } from "../scenes/Castle";
+import { drawFoal } from "../entities/foal";
+import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
-import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
+import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
-import { Interval, Timeout, Transform } from "../utils/TimeUtils";
+import { Timeout, Transform } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import {
   DragInput,
   Game,
   GameState,
+  Health,
   Hunter,
   Prey,
   Score,
@@ -29,7 +24,7 @@ import {
 } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
-import { comboSound, SoundLibrary } from "./sfx";
+import { comboSound, sfx, SongLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
 import { zzfxP } from "./zzfx";
 
@@ -97,7 +92,7 @@ export class DamageSystem {
 
   constructor(world: World) {
     this.world = world;
-    this.bounties = world.query(Prey, DynamicBody);
+    this.bounties = world.query(Prey, Health, DynamicBody);
     this.hunters = world.query(Hunter, DynamicBody);
     this.unicorn = this.world.query(Unicorn);
   }
@@ -106,10 +101,8 @@ export class DamageSystem {
     this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
       if (hunter.target?.exists && hunter.distance! < 20) {
         const preyEntity = hunter.target!;
-        const [preyData, preyBody]: [Prey, DynamicBody] = preyEntity.get(
-          Prey,
-          DynamicBody,
-        )!;
+        const [preyData, health, preyBody]: [Prey, Health, DynamicBody] =
+          preyEntity.get(Prey, Health, DynamicBody)!;
 
         h.delete();
 
@@ -117,13 +110,13 @@ export class DamageSystem {
           unicornData.getPissed();
         });
 
-        preyData.lives = Math.max(0, preyData.lives - 1);
+        health.lives = Math.max(0, health.lives - 1);
         bloodParticles(this.world, preyBody.position);
-        zzfxP(SoundLibrary.damage);
-        // todo: violently shake + blood particles
+        zzfxP(sfx.damage);
+        // todo: violently shake
 
-        if (preyData.lives <= 0) {
-          zzfxP(SoundLibrary.death);
+        if (health.lives <= 0) {
+          zzfxP(sfx.death);
           preyEntity.delete();
           // todo: display carcass sprite
 
@@ -174,7 +167,7 @@ export class AttackSystem {
             ? weapon.points
             : this.firstKillPoints;
 
-          zzfxP(SoundLibrary.explosion);
+          zzfxP(sfx.explosion);
           deathParticles(this.world, hunterBody.position);
           h.delete();
 
@@ -270,18 +263,22 @@ export class FiredProjectileSystem {
   }
 }
 
+const YELLOW = rgba(179, 255, 0, 1);
 export class GameCycle {
   totalLives = 0;
   preys: Query;
   gameState: Query;
   spawners: Query;
   slingshot: Query;
+  score: Entity;
+  currentSong: AudioBufferSourceNode | null = null;
 
   constructor(public world: World) {
     this.preys = world.query(Prey);
     this.gameState = world.query(Game);
     this.spawners = world.query(Spawner);
     this.slingshot = world.query(SlingshotFrame);
+    this.score = this.world.create().add(new Score());
   }
 
   update(dt: number) {
@@ -295,12 +292,12 @@ export class GameCycle {
         let totalLives = 0;
 
         this.preys.iterate((e, preyData: Prey) => {
-          totalLives += preyData.lives;
+          const health: Health = e.get(Health);
+          if (health) totalLives += health.lives;
         });
 
         this.totalLives = totalLives;
 
-        console.log(totalLives);
         if (totalLives <= 0) {
           this.gameOver();
         }
@@ -315,27 +312,63 @@ export class GameCycle {
   gameOver() {
     const [_, game]: [Entity, Game] = this.gameState.first()!;
 
+    this.currentSong?.stop();
+
     game.state = GameState.Over;
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
-    slingshotEntity.remove(DragInput);
+
+    // Disable slingshot
+    slingshotData.handle.remove(DragInput);
+
+    // Stop hunting
+    this.world.query(Hunter).iterate((e) => e.remove(Hunter));
+
+    // Stop spawning
     this.spawners.iterate((e, spawner: Spawner) => e.delete());
 
-    const ui = Stage.getLayer(LayerName.UI)!.canvas;
+    const { ch, cw } = Stage.setActiveLayer(LayerName.Info);
 
-    const text = this.world.create().add(
-      new Sprite(() => {
-        const text = "Goodbye, children...";
-        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
-        drawText(text, new Point(cw * 0.5, ch * 0.5));
+    this.world.create().add(
+      Timeout(2, () => {
+        const ui = Stage.getLayer(LayerName.UI)!.canvas;
+
+        const goodbye = this.world
+          .create()
+          .add(
+            new Sprite(() =>
+              drawText("Goodbye, children...", new Point(cw * 0.5, ch * 0.3)),
+            ),
+          );
+
+        this.score.add(
+          new Sprite(() => {
+            const text = `Total score: ${this.score.get(Score).totalScore}`;
+            drawText(text, new Point(cw * 0.5, ch * 0.4), {
+              size: 28,
+              fill: YELLOW,
+            });
+          }),
+        );
+        this.world.create().add(
+          Timeout(2, () => {
+            const retry = this.world.create().add(
+              new Sprite(() =>
+                drawText("Tap to retry", new Point(cw * 0.5, ch * 0.7), {
+                  size: 24,
+                }),
+              ),
+            );
+
+            ui.onclick = () => {
+              goodbye.delete();
+              retry.delete();
+              this.startWave();
+            };
+          }),
+        );
       }),
     );
-
-    ui.onclick = () => {
-      text.delete();
-      createSlingshot(this.world);
-      this.startWave();
-    };
   }
 
   startWave() {
@@ -343,18 +376,32 @@ export class GameCycle {
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
 
-    const { canvas: ui } = Stage.getLayer(LayerName.UI)!;
+    const { canvas: ui, width: cw, height } = Stage.getLayer(LayerName.UI)!;
     ui.onclick = null;
 
-    const score = this.world
-      .create()
-      .add(new Score(), new Sprite(drawTotalScore));
+    this.currentSong?.stop();
+    this.currentSong = zzfxP(...SongLibrary.game);
+    this.currentSong.loop = true;
+
+    this.score.add(
+      new Sprite(() => {
+        const text = `Score ${this.score.get(Score).totalScore}`;
+        drawText(text, new Point(cw, 0), {
+          centered: false,
+          size: 32,
+        });
+      }),
+    );
 
     // Setup slingshot
     slingshotData.addDragInput();
 
     // Setup spawners
     this.world.create().add(new Spawner(this.world));
+
+    // Recreate foals and restore health
+    this.preys.length <= 0 && spawnFoals(this.world);
+    this.preys.iterate((e) => e.add(new Health()));
 
     // Sky transition
     game.state = GameState.Ongoing;
@@ -366,8 +413,8 @@ export class GameCycle {
     const title = this.world.create().add(
       new Sprite(() => {
         const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
-        drawText("Sling The Horn", new Point(cw * 0.5, ch * 0.2), {
-          fill: rgba(179, 255, 0, 1),
+        drawText("Sling the Horn", new Point(cw * 0.5, ch * 0.2), {
+          fill: YELLOW,
           lineWidth: 2,
           size: 64,
         });
@@ -384,7 +431,6 @@ export class GameCycle {
     ui.onclick = () => {
       text.delete();
       title.delete();
-      createSlingshot(this.world);
       this.startWave();
     };
   }
@@ -403,31 +449,30 @@ export class ReloadSystem {
   }
 
   update(dt) {
-    this.slingshot.iterate((s, slingshot: SlingshotFrame) =>
-      this.unicorn.iterate((u, unicorn: Unicorn) => {
-        if (!unicorn.horn && !slingshot.weapon) {
-          unicorn.passHornToSlingshot(this.world, u, s);
-        }
-      }),
+    this.slingshot.iterate(
+      (s, slingshot: SlingshotFrame) =>
+        // Check that slingshot input is enabled
+        slingshot.handle.get(DragInput) &&
+        this.unicorn.iterate((u, unicorn: Unicorn) => {
+          if (!unicorn.horn && !slingshot.weapon) {
+            unicorn.passHornToSlingshot(this.world, u, s);
+          }
+        }),
     );
   }
 }
 
-function drawTotalScore(e: Entity) {
-  const { totalScore }: Score = e.get(Score);
-  const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.Game);
-
-  ctx.font = "bold 32px sans-serif";
-  const text = `Score ${totalScore}`;
-  const metrics = ctx.measureText(text);
-  const margin = 10;
-  const { x, y } = new Point(
-    cw - metrics.width - margin,
-    metrics.emHeightAscent + margin,
-  );
-  ctx.fillStyle = WHITE;
-  ctx.strokeStyle = BLACK;
-  ctx.lineWidth = 1;
-  ctx.fillText(text, x, y);
-  ctx.strokeText(text, x, y);
+export function spawnFoals(world: World) {
+  const { cw, ch } = Stage.setActiveLayer("game");
+  const width = 0.8;
+  const offset = cw * (1 - width);
+  distribute(offset, cw * width, 4, (x, idx) => {
+    world
+      .create()
+      .add(
+        new Prey(),
+        new DynamicBody(new Point(x, ch * 0.85)),
+        new Sprite(drawFoal),
+      );
+  });
 }

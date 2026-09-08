@@ -55,8 +55,6 @@ export class SlingshotFrame {
 
     this.handle = (this.rope.get(ElasticLine) as ElasticLine).joints[1];
 
-    this.addDragInput();
-
     // Turn this into a system
     this.reload = () => {
       this.weapon = world.create().add(

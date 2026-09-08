@@ -1,6 +1,6 @@
 import type { Entity } from "../ecs";
 import { rgb } from "../engine/color";
-import { Prey, START_LIVES } from "../engine/components";
+import { Health, Prey, START_LIVES } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { Stage } from "../engine/Stage";
 import { distribute } from "../utils/MathUtils";
@@ -68,7 +68,11 @@ export function drawFoal(e: Entity) {
   const size = new Point(50);
   const { ctx } = Stage.setActiveLayer("game");
 
-  const [preyData, foalBody]: [Prey, DynamicBody] = e.get(Prey, DynamicBody);
+  const [preyData, health, foalBody]: [Prey, Health, DynamicBody] = e.get(
+    Prey,
+    Health,
+    DynamicBody,
+  );
   const { position } = foalBody;
   const spritePos = position;
 
@@ -90,21 +94,22 @@ export function drawFoal(e: Entity) {
   }
 
   const offset = 30;
-  distribute(
-    position.x - offset,
-    position.x + offset,
-    START_LIVES,
-    (x, idx) => {
-      if (idx + 1 <= preyData.lives) {
-        ctx.strokeStyle = "black";
-        ctx.fillStyle = "#ff9ec5";
-      } else {
-        ctx.strokeStyle = "#666";
-        ctx.fillStyle = "#444";
-      }
-      heart(new Point(x, position.y + 60));
-    },
-  );
+  health &&
+    distribute(
+      position.x - offset,
+      position.x + offset,
+      START_LIVES,
+      (x, idx) => {
+        if (idx + 1 <= health.lives) {
+          ctx.strokeStyle = BLACK;
+          ctx.fillStyle = "#ff9ec5";
+        } else {
+          ctx.strokeStyle = "#666";
+          ctx.fillStyle = "#444";
+        }
+        heart(new Point(x, position.y + 60));
+      },
+    );
 
   ctx.resetTransform();
 }

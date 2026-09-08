@@ -1,7 +1,8 @@
-import ecs, { Entity } from "./ecs";
+import ecs from "./ecs";
 import {
   DragInput,
   Game,
+  Health,
   Hunter,
   Prey,
   Score,
@@ -12,8 +13,7 @@ import {
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
-import { huguesNo5 } from "./engine/sfx";
-import { LayerName, Stage } from "./engine/Stage";
+import { Stage } from "./engine/Stage";
 import {
   AttackSystem,
   DamageSystem,
@@ -21,17 +21,14 @@ import {
   GameCycle,
   ReloadSystem,
   Render,
+  spawnFoals,
   TargetingSystem,
 } from "./engine/systems";
-import { zzfxM } from "./engine/zzfxm";
-import { drawFoal } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
-import { getPaths } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
-import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
-import { BLACK, initGradients, WHITE } from "./utils/SpriteUtils";
+import { initGradients } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
   Transform,
@@ -56,6 +53,7 @@ const { registerComponents, createWorld } = ecs;
 
 registerComponents(
   Hunter,
+  Health,
   Prey,
   Score,
   Game,
@@ -81,21 +79,10 @@ function init() {
   Castle.draw();
   Stage.addResizeListener(Castle.draw);
 
-  // createSlingshot(world);
+  createSlingshot(world);
+  spawnFoals(world);
 
   const { cw, ch } = Stage.setActiveLayer("game");
-  const width = 0.8;
-  const offset = cw * (1 - width);
-
-  distribute(offset, cw * width, 4, (x, idx) => {
-    world
-      .create()
-      .add(
-        new Prey(),
-        new DynamicBody(new Point(x, ch * 0.85)),
-        new Sprite(drawFoal),
-      );
-  });
 
   const unicorn = world.create().add(
     new DynamicBody(new Point(200, ch * 0.7), {
@@ -107,12 +94,9 @@ function init() {
 
   const game = world.create().add(new Game());
 
-  const songData = zzfxM(...huguesNo5);
-  // const audioNode = zzfxP(...songData);
+  gameCycle.menu();
 
   requestAnimationFrame(loop);
-
-  gameCycle.menu();
 }
 
 const pipeline = [
