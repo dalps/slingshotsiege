@@ -27,7 +27,8 @@ export const none = "none";
 export const url =
   (s: string): (() => CanvasGradient) =>
   () =>
-    gradients[s];
+    gradients["rainbow"]
+    // gradients[s];
 
 export const makePart = (
   pathData: string,

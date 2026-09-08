@@ -29,26 +29,26 @@ import { getPaths } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
 import { distribute } from "./utils/MathUtils";
 import { Point } from "./utils/Point";
-import { initGradients } from "./utils/SpriteUtils";
+import { BLACK, initGradients, WHITE } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
   Transform,
   TransformSystem,
   type timestamp,
 } from "./utils/TimeUtils";
-import assetsSvg from "/assets.svg?raw";
+// import assetsSvg from "/assets.svg?raw";
 
-{
-  document.querySelector("body")?.insertAdjacentHTML("beforeend", assetsSvg);
+// {
+//   document.querySelector("body")?.insertAdjacentHTML("beforeend", assetsSvg);
 
-  getPaths("foal");
-  getPaths("bat");
-  getPaths("wraith");
-  getPaths("adult");
-  getPaths("expressions");
+//   getPaths("foal");
+//   getPaths("bat");
+//   getPaths("wraith");
+//   getPaths("adult");
+//   getPaths("expressions");
 
-  document.querySelector("svg")?.remove();
-}
+//   document.querySelector("svg")?.remove();
+// }
 
 const { registerComponents, createWorld } = ecs;
 
@@ -78,17 +78,17 @@ function init() {
   createSlingshot(world);
 
   const { cw, ch } = Stage.setActiveLayer("game");
-  const length = 0.8;
-  const offset = cw * (1 - length) * 0.5;
+  const width = 0.8;
+  const offset = cw * (1 - width);
 
-  distribute(offset, cw * length, 4, (x, idx) => {
-    world.create().add(
-      new Prey(),
-      new DynamicBody(new Point(x, ch * 0.8), {
-        // startVelocity: new Point((-1 + 2 * Math.random()) * 10, 0),
-      }),
-      new Sprite(drawFoal),
-    );
+  distribute(offset, cw * width, 4, (x, idx) => {
+    world
+      .create()
+      .add(
+        new Prey(),
+        new DynamicBody(new Point(x, ch * 0.85)),
+        new Sprite(drawFoal),
+      );
   });
 
   const unicorn = world.create().add(
@@ -148,8 +148,8 @@ function drawTotalScore(e: Entity) {
     cw - metrics.width - margin,
     metrics.emHeightAscent + margin,
   );
-  ctx.fillStyle = "white";
-  ctx.strokeStyle = "black";
+  ctx.fillStyle = WHITE;
+  ctx.strokeStyle = BLACK;
   ctx.lineWidth = 1;
   ctx.fillText(text, x, y);
   ctx.strokeText(text, x, y);

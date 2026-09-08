@@ -36,11 +36,13 @@ export function getPaths(groupLabel: string): Record<string, DrawingPart> {
 
   let output = `${groupLabel} = {`;
 
-  Object.entries(obj).forEach(([k, { path, fill, stroke }]) => {
+  Object.entries(obj).forEach(([k, { path, ...fields }]) => {
     output += `${k}: {`;
     output += `path: new Path2D(\`${path}\`),`;
-    if (fill && fill !== `none`) output += `fill: ${fill},`;
-    if (stroke && stroke !== `none`) output += `stroke: ${fill},`;
+    ["fill", "stroke"].forEach((k) => {
+      const v = fields[k];
+      if (v && v !== `none`) output += `${k}: ${v},`;
+    });
     output += `},`;
   });
 

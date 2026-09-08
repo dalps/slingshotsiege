@@ -130,6 +130,7 @@ export class DragInput {
       const { bottom, top, left, right } = uiLayer.rect;
 
       if (x < left || x > right || y < top || y > bottom) {
+        this.onrelease(this.dragPos!);
         this.dragPos = null;
       }
     };
