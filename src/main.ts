@@ -5,6 +5,7 @@ import {
   Health,
   Hunter,
   Prey,
+  Rainbow,
   Score,
   Spawner,
   Sprite,
@@ -13,17 +14,19 @@ import {
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
-import { Stage } from "./engine/Stage";
+import { LayerName, Stage } from "./engine/Stage";
 import {
   AttackSystem,
   DamageSystem,
   FiredProjectileSystem,
   GameCycle,
+  RainbowSystem,
   ReloadSystem,
   Render,
   spawnFoals,
   TargetingSystem,
 } from "./engine/systems";
+import { drawRainbow } from "./entities/rainbow";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
@@ -63,6 +66,7 @@ registerComponents(
   DragInput,
   ElasticLine,
   Weapon,
+  Rainbow,
   Unicorn,
   Transform,
   Sprite,
@@ -82,7 +86,7 @@ function init() {
   createSlingshot(world);
   spawnFoals(world);
 
-  const { cw, ch } = Stage.setActiveLayer("game");
+  const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
 
   const unicorn = world.create().add(
     new DynamicBody(new Point(200, ch * 0.7), {
@@ -106,6 +110,7 @@ const pipeline = [
   new AttackSystem(world),
   new DamageSystem(world),
   new ReloadSystem(world),
+  new RainbowSystem(world),
   new FiredProjectileSystem(world),
   new Render(world),
   gameCycle,

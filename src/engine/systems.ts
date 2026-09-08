@@ -4,7 +4,6 @@ import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
 import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Timeout, Transform } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import {
@@ -14,6 +13,7 @@ import {
   Health,
   Hunter,
   Prey,
+  Rainbow,
   Score,
   Spawner,
   Sprite,
@@ -24,9 +24,11 @@ import {
 } from "./components";
 import { bloodParticles, deathParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
-import { comboSound, sfx, SongLibrary } from "./sfx";
+import { comboSound, megaKillSound, sfx, SongLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
 import { zzfxP } from "./zzfx";
+
+const FIRST_KILL_POINTS = 100;
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -77,7 +79,7 @@ export class TargetingSystem {
           .normalize()
           .scale(hunter.speed * 10);
 
-        hunterBody.velocity = damp2I(hunterBody.velocity, direction, 1, dt);
+        damp2I(hunterBody.velocity, direction, 0.6, dt);
         // hunterBody.velocity = direction;
       }
     });
@@ -134,13 +136,82 @@ export class DamageSystem {
   }
 }
 
+export class RainbowSystem {
+  weapons: Query;
+  rainbows: Query;
+  hunter: Query;
+  world: World;
+
+  constructor(world: World) {
+    this.world = world;
+    this.weapons = world.query(Weapon, DynamicBody);
+    this.rainbows = world.query(Rainbow, DynamicBody);
+    this.hunter = world.query(Hunter, DynamicBody);
+  }
+
+  update(dt) {
+    this.weapons.iterate((w, weapon: Weapon, weaponBody: DynamicBody) => {
+      if (weapon.state !== WeaponState.Fired) return;
+
+      this.rainbows.iterate((r, rainbow: Rainbow, rainbowBody: DynamicBody) => {
+        const distance = weaponBody.position.distance(rainbowBody.position);
+
+        if (distance >= rainbow.radius) return;
+
+        zzfxP(sfx.explosion);
+        zzfxP(...megaKillSound);
+        deathParticles(this.world, rainbowBody.position);
+        r.delete();
+
+        weapon.lastKill = performance.now();
+        weapon.points += FIRST_KILL_POINTS;
+        showScoreForKill(this.world, FIRST_KILL_POINTS, rainbowBody.position);
+
+        this.world
+          .query(Unicorn)
+          .iterate(
+            (e, unicorn: Unicorn) =>
+              (unicorn.expression = UnicornEmotion.Content),
+          );
+
+        // todo: pause spawners
+
+        // Stop & kill all foes
+        this.hunter.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
+          hunterBody.velocity.set(0, 0);
+          h.remove(Hunter); // Disable weapon interaction
+
+          this.world.create().add(
+            Timeout(2, () => {
+              zzfxP(sfx.explosion);
+              deathParticles(this.world, hunterBody.position);
+              h.delete();
+
+              weapon.points += FIRST_KILL_POINTS;
+
+              showScoreForKill(
+                this.world,
+                FIRST_KILL_POINTS,
+                hunterBody.position,
+              );
+            }),
+          );
+        });
+
+        this.world
+          .query(Score)
+          .iterate((e, score: Score) => (score.totalScore += weapon.points));
+      });
+    });
+  }
+}
+
 /**
  * Makes travelling horns kill the foes.
  */
 export class AttackSystem {
   comboMaxDelay = 100;
   damageRadius = 50;
-  firstKillPoints = 100;
 
   weapons: Query;
   hunter: Query;
@@ -165,7 +236,7 @@ export class AttackSystem {
           // 100 --> 200 --> 400 --> 800
           const pointsForKill = weapon.points
             ? weapon.points
-            : this.firstKillPoints;
+            : FIRST_KILL_POINTS;
 
           zzfxP(sfx.explosion);
           deathParticles(this.world, hunterBody.position);
@@ -179,33 +250,23 @@ export class AttackSystem {
             .iterate((e, score: Score) => (score.totalScore += pointsForKill));
           weapon.lastKill = now;
 
-          const scoreText = `${weapon.points}`;
-
-          this.world.create().add(
-            new DynamicBody(hunterBody.position, {
-              startVelocity: new Point(0, -10),
-            }),
-            new Sprite((e: Entity) => {
-              const {
-                position: { x, y },
-              }: DynamicBody = e.get(DynamicBody);
-
-              const { ctx } = Stage.setActiveLayer(LayerName.Game);
-              ctx.strokeStyle = "black";
-              ctx.lineWidth = 2;
-              ctx.fillStyle = "yellow";
-              ctx.font = "bold 36px sans-serif";
-              const length = ctx.measureText(scoreText).width * 0.5;
-              // const { x, y } = hunterBody.position;
-              ctx.fillText(scoreText, x - length, y);
-              ctx.strokeText(scoreText, x - length, y);
-            }),
-            new Transform({ duration: 1, end: (e) => e.delete() }),
-          );
+          showScoreForKill(this.world, weapon.points, hunterBody.position);
         }
       });
     });
   }
+}
+
+function showScoreForKill(world: World, score: number, position: Point) {
+  const scoreText = `${score}`;
+
+  world.create().add(
+    new DynamicBody(position, {
+      startVelocity: new Point(0, -10),
+    }),
+    new Sprite(() => drawText(scoreText, position, { fill: YELLOW, size: 36 })),
+    new Transform({ duration: 1, end: (e) => e.delete() }),
+  );
 }
 
 export class Render {

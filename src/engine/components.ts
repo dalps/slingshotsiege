@@ -1,5 +1,6 @@
 import type { Entity, World } from "../ecs";
 import { drawEnemy } from "../entities/enemy";
+import { drawRainbow } from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { lerp, lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
@@ -255,24 +256,46 @@ export class Game {
 }
 
 export class Spawner {
-  interval: Entity;
+  enemyInterval: Entity;
+  powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.interval = world.create().add(
-      Interval(1, () => {
-        const { cw } = Stage.setActiveLayer(LayerName.Game);
-        world
-          .create()
-          .add(
-            new Hunter(),
-            new DynamicBody(new Point(Math.random() * cw, 0)),
-            new Sprite(drawEnemy),
-          );
+    this.enemyInterval = world
+      .create()
+      .add(
+        Interval(1, () =>
+          world
+            .create()
+            .add(
+              new Hunter(),
+              new DynamicBody(new Point(Math.random() * Stage.cw, 0)),
+              new Sprite(drawEnemy),
+            ),
+        ),
+      );
+
+    this.powerupInterval = world.create().add(
+      Interval(2, () => {
+        const dice = Math.random() < 0.5;
+        world.create().add(
+          new Rainbow(),
+          new DynamicBody(new Point(dice ? 0 : Stage.cw, 100), {
+            startVelocity: new Point(10, 0).scale(dice ? 1 : -1),
+          }),
+          new Sprite(drawRainbow),
+        );
       }),
     );
   }
 
   destructor() {
-    this.interval.delete();
+    this.enemyInterval.delete();
   }
+}
+
+export class Rainbow {
+  innerRadius = 80;
+  outerRadius = 100;
+  radius = 20;
+  gradientAngle = 0;
 }

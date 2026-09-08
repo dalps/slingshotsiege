@@ -27,15 +27,13 @@ export const none = "none";
 export const url =
   (s: string): (() => CanvasGradient) =>
   () =>
-    gradients["rainbow"]
-    // gradients[s];
+    gradients["rainbow"];
+// gradients[s];
 
-export const makePart = (
-  pathData: string,
-  color: string | string[],
-): DrawingPart => ({
+export const makePart = ([pathData, fill, stroke]): DrawingPart => ({
   path: new Path2D(pathData),
-  color,
+  fill,
+  stroke,
 });
 
 export const makeGradient = (colors: string[]) => {
