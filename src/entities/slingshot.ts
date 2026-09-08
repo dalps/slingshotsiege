@@ -55,13 +55,7 @@ export class SlingshotFrame {
 
     this.handle = (this.rope.get(ElasticLine) as ElasticLine).joints[1];
 
-    this.handle.add(
-      new DragInput({
-        onclick: this.grabCord.bind(this),
-        onmove: this.followCord.bind(this),
-        onrelease: this.release.bind(this),
-      }),
-    );
+    this.addDragInput();
 
     // Turn this into a system
     this.reload = () => {
@@ -74,6 +68,16 @@ export class SlingshotFrame {
         new Sprite(drawWeapon),
       );
     };
+  }
+
+  addDragInput() {
+    this.handle.add(
+      new DragInput({
+        onclick: this.grabCord.bind(this),
+        onmove: this.followCord.bind(this),
+        onrelease: this.release.bind(this),
+      }),
+    );
   }
 
   grabCord(pointerPos: Point) {

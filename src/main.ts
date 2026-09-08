@@ -1,9 +1,11 @@
 import ecs, { Entity } from "./ecs";
 import {
   DragInput,
+  Game,
   Hunter,
   Prey,
   Score,
+  Spawner,
   Sprite,
   Unicorn,
   Weapon,
@@ -16,9 +18,9 @@ import {
   AttackSystem,
   DamageSystem,
   FiredProjectileSystem,
+  GameCycle,
   ReloadSystem,
   Render,
-  Spawner,
   TargetingSystem,
 } from "./engine/systems";
 import { zzfxM } from "./engine/zzfxm";
@@ -56,6 +58,8 @@ registerComponents(
   Hunter,
   Prey,
   Score,
+  Game,
+  Spawner,
   DynamicBody,
   SlingshotFrame,
   DragInput,
@@ -68,6 +72,8 @@ registerComponents(
 
 const world = createWorld();
 
+const gameCycle = new GameCycle(world);
+
 function init() {
   Stage.init();
   initGradients();
@@ -75,7 +81,7 @@ function init() {
   Castle.draw();
   Stage.addResizeListener(Castle.draw);
 
-  createSlingshot(world);
+  // createSlingshot(world);
 
   const { cw, ch } = Stage.setActiveLayer("game");
   const width = 0.8;
@@ -99,12 +105,14 @@ function init() {
     new Sprite(drawUnicorn),
   );
 
-  const score = world.create().add(new Score(), new Sprite(drawTotalScore));
+  const game = world.create().add(new Game());
 
   const songData = zzfxM(...huguesNo5);
   // const audioNode = zzfxP(...songData);
 
   requestAnimationFrame(loop);
+
+  gameCycle.menu();
 }
 
 const pipeline = [
@@ -113,10 +121,10 @@ const pipeline = [
   new TargetingSystem(world),
   new AttackSystem(world),
   new DamageSystem(world),
-  new Spawner(world),
   new ReloadSystem(world),
   new FiredProjectileSystem(world),
   new Render(world),
+  gameCycle,
 ];
 
 let last = performance.now();
@@ -135,22 +143,3 @@ function loop(now: timestamp) {
 }
 
 init();
-
-function drawTotalScore(e: Entity) {
-  const { totalScore }: Score = e.get(Score);
-  const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.Game);
-
-  ctx.font = "bold 32px sans-serif";
-  const text = `Score ${totalScore}`;
-  const metrics = ctx.measureText(text);
-  const margin = 10;
-  const { x, y } = new Point(
-    cw - metrics.width - margin,
-    metrics.emHeightAscent + margin,
-  );
-  ctx.fillStyle = WHITE;
-  ctx.strokeStyle = BLACK;
-  ctx.lineWidth = 1;
-  ctx.fillText(text, x, y);
-  ctx.strokeText(text, x, y);
-}

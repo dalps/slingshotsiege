@@ -177,6 +177,15 @@ export class Query {
     });
   }
 
+  first() {
+    const entity = this._set.values().next().value;
+    if (!entity) return;
+    {
+      const c = entity.get(...this._components);
+      return [entity, ...(c instanceof Array ? c : [c])];
+    }
+  }
+
   /**
    * The number of entities that satisfied the query.
    */

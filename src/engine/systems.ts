@@ -1,14 +1,26 @@
 import { World, type Entity, type Query } from "../ecs";
 import { drawBat } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
-import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
+import {
+  createSlingshot,
+  drawFarGoneWeapon,
+  SlingshotFrame,
+} from "../entities/slingshot";
+import { skyGradient } from "../scenes/Castle";
+import { drawText } from "../utils/CanvasUtils";
 import { damp2I, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
+import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Interval, Timeout, Transform } from "../utils/TimeUtils";
+import { rgba } from "./color";
 import {
+  DragInput,
+  Game,
+  GameState,
   Hunter,
   Prey,
   Score,
+  Spawner,
   Sprite,
   Unicorn,
   UnicornEmotion,
@@ -107,11 +119,11 @@ export class DamageSystem {
 
         preyData.lives = Math.max(0, preyData.lives - 1);
         bloodParticles(this.world, preyBody.position);
-        zzfxP(SoundLibrary.damage)
+        zzfxP(SoundLibrary.damage);
         // todo: violently shake + blood particles
-        
+
         if (preyData.lives <= 0) {
-          zzfxP(SoundLibrary.death)
+          zzfxP(SoundLibrary.death);
           preyEntity.delete();
           // todo: display carcass sprite
 
@@ -203,36 +215,6 @@ export class AttackSystem {
   }
 }
 
-export class Spawner {
-  interval: Entity;
-
-  constructor(public world: World) {
-    this.interval = world.create().add(
-      Interval(1, () => {
-        const { cw, ch } = Stage.setActiveLayer("game");
-        world
-          .create()
-          .add(
-            new Hunter(),
-            new DynamicBody(
-              new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
-            ),
-            new Sprite(drawEnemy),
-          );
-      }),
-    );
-  }
-
-  stop() {
-    this.interval.delete();
-  }
-
-  update() {
-    // Stop spawning foes when all preys are dead
-    this.world.query(Prey).length === 0 && this.stop();
-  }
-}
-
 export class Render {
   sprites: Query;
 
@@ -288,33 +270,123 @@ export class FiredProjectileSystem {
   }
 }
 
-export const enum GameState {
-  Menu,
-  Ongoing,
-  Over,
-}
-
 export class GameCycle {
   totalLives = 0;
   preys: Query;
-  gameState = GameState.Ongoing;
+  gameState: Query;
+  spawners: Query;
+  slingshot: Query;
 
-  constructor(world: World) {
+  constructor(public world: World) {
     this.preys = world.query(Prey);
+    this.gameState = world.query(Game);
+    this.spawners = world.query(Spawner);
+    this.slingshot = world.query(SlingshotFrame);
   }
 
   update(dt: number) {
-    let totalLives = 0;
+    const [_, game]: [Entity, Game] = this.gameState.first()!;
 
-    this.preys.iterate((e, preyData: Prey) => {
-      totalLives += preyData.lives;
-    });
+    switch (game.state) {
+      case GameState.Menu: {
+        break;
+      }
+      case GameState.Ongoing: {
+        let totalLives = 0;
 
-    this.totalLives = totalLives;
+        this.preys.iterate((e, preyData: Prey) => {
+          totalLives += preyData.lives;
+        });
 
-    if (totalLives <= 0) {
-      this.gameState = GameState.Over;
+        this.totalLives = totalLives;
+
+        console.log(totalLives);
+        if (totalLives <= 0) {
+          this.gameOver();
+        }
+        break;
+      }
+      case GameState.Over: {
+        break;
+      }
     }
+  }
+
+  gameOver() {
+    const [_, game]: [Entity, Game] = this.gameState.first()!;
+
+    game.state = GameState.Over;
+    const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
+      this.slingshot.first()!;
+    slingshotEntity.remove(DragInput);
+    this.spawners.iterate((e, spawner: Spawner) => e.delete());
+
+    const ui = Stage.getLayer(LayerName.UI)!.canvas;
+
+    const text = this.world.create().add(
+      new Sprite(() => {
+        const text = "Goodbye, children...";
+        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
+        drawText(text, new Point(cw * 0.5, ch * 0.5));
+      }),
+    );
+
+    ui.onclick = () => {
+      text.delete();
+      createSlingshot(this.world);
+      this.startWave();
+    };
+  }
+
+  startWave() {
+    const [_, game]: [Entity, Game] = this.gameState.first()!;
+    const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
+      this.slingshot.first()!;
+
+    const { canvas: ui } = Stage.getLayer(LayerName.UI)!;
+    ui.onclick = null;
+
+    const score = this.world
+      .create()
+      .add(new Score(), new Sprite(drawTotalScore));
+
+    // Setup slingshot
+    slingshotData.addDragInput();
+
+    // Setup spawners
+    this.world.create().add(new Spawner(this.world));
+
+    // Sky transition
+    game.state = GameState.Ongoing;
+  }
+
+  menu() {
+    const ui = Stage.getLayer(LayerName.UI)!.canvas;
+
+    const title = this.world.create().add(
+      new Sprite(() => {
+        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
+        drawText("Sling The Horn", new Point(cw * 0.5, ch * 0.2), {
+          fill: rgba(179, 255, 0, 1),
+          lineWidth: 2,
+          size: 64,
+        });
+      }),
+    );
+
+    const text = this.world.create().add(
+      new Sprite(() => {
+        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
+        drawText("Tap to start", new Point(cw * 0.5, ch * 0.5));
+      }),
+    );
+
+    ui.onclick = () => {
+      text.delete();
+      title.delete();
+      createSlingshot(this.world);
+      this.startWave();
+    };
   }
 }
 
@@ -339,4 +411,23 @@ export class ReloadSystem {
       }),
     );
   }
+}
+
+function drawTotalScore(e: Entity) {
+  const { totalScore }: Score = e.get(Score);
+  const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.Game);
+
+  ctx.font = "bold 32px sans-serif";
+  const text = `Score ${totalScore}`;
+  const metrics = ctx.measureText(text);
+  const margin = 10;
+  const { x, y } = new Point(
+    cw - metrics.width - margin,
+    metrics.emHeightAscent + margin,
+  );
+  ctx.fillStyle = WHITE;
+  ctx.strokeStyle = BLACK;
+  ctx.lineWidth = 1;
+  ctx.fillText(text, x, y);
+  ctx.strokeText(text, x, y);
 }

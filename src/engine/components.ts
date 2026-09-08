@@ -1,8 +1,9 @@
 import type { Entity, World } from "../ecs";
+import { drawEnemy } from "../entities/enemy";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
-import { lerp2 } from "../utils/MathUtils";
+import { lerp, lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Transform, type timestamp } from "../utils/TimeUtils";
+import { Interval, Transform, type timestamp } from "../utils/TimeUtils";
 import { DynamicBody } from "./Physics2D";
 import { Stage } from "./Stage";
 
@@ -235,5 +236,41 @@ export class Unicorn {
     // let { horn } = this;
     // this.hornProgress = 0;
     // return horn;
+  }
+}
+
+export const enum GameState {
+  Menu,
+  Ongoing,
+  Over,
+}
+
+export class Game {
+  state: GameState = GameState.Menu;
+  wave = 0;
+}
+
+export class Spawner {
+  interval: Entity;
+
+  constructor(public world: World) {
+    this.interval = world.create().add(
+      Interval(1, () => {
+        const { cw, ch } = Stage.setActiveLayer("game");
+        world
+          .create()
+          .add(
+            new Hunter(),
+            new DynamicBody(
+              new Point(Math.random() * cw, lerp(0, -ch * 0.5, Math.random())),
+            ),
+            new Sprite(drawEnemy),
+          );
+      }),
+    );
+  }
+
+  destructor() {
+    this.interval.delete();
   }
 }
