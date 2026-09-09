@@ -23,13 +23,25 @@ export class Transform {
   }
 }
 
-export const Timeout = (duration: seconds, end: Transformer["end"]) =>
-  new Transform({ duration, end });
+export const Timeout = (
+  e: Entity,
+  duration: seconds,
+  end: Transformer["end"],
+) => e.add(new Transform({ duration, end }));
 
 export const Interval = (duration: seconds, end: Transformer["end"]) => {
   const t = new Transform({ duration, end });
   t.transformer.next = t.transformer;
   return t;
+};
+
+export const Loop = (duration: seconds, iterations: number, update, end) => {
+  const t = new Transform({ duration, end });
+  const endFn = () => {
+    t.transformer.next = --iterations >= 0 ? t.transformer : undefined;
+    end();
+  };
+  t.transformer.end = endFn;
 };
 
 // From kutuluk/js13k-ecs

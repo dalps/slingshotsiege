@@ -1,4 +1,4 @@
-import { Point } from "./Point";
+import { Point, pt } from "./Point";
 
 export const DEG2RAD = Math.PI / 180;
 export const RAD2DEG = 180 / Math.PI;
@@ -19,7 +19,7 @@ export function distribute(
   min: number,
   max: number,
   subs: number,
-  cb: (n: number, i: number) => void = () => {}
+  cb: (n: number, i: number) => void = () => {},
 ) {
   if (subs <= 1) return [lerp(min, max, 0.5)];
 
@@ -36,7 +36,7 @@ export function damp(
   current: number,
   target: number,
   lambda: number,
-  dt: number
+  dt: number,
 ) {
   return lerp(current, target, 1 - Math.exp(-lambda * dt));
 }
@@ -56,14 +56,14 @@ export function onSegment(a: Point, b: Point, p: Point) {
 }
 
 export function lerp2(min: Point, max: Point, t: number): Point {
-  return new Point(lerp(min.x, max.x, t), lerp(min.y, max.y, t));
+  return pt(lerp(min.x, max.x, t), lerp(min.y, max.y, t));
 }
 
 export function damp2I(
   current: Point,
   target: Point,
   lambda: number,
-  dt: number
+  dt: number,
 ): Point {
   current.x = damp(current.x, target.x, lambda, dt);
   current.y = damp(current.y, target.y, lambda, dt);
@@ -117,59 +117,4 @@ export function properInter(a: Point, b: Point, c: Point, d: Point) {
   }
 
   return undefined;
-}
-
-const assertTruthy = b => {
-  if (!b) {
-    throw new Error("Assertion failed.");
-  }
-};
-
-function testLineIntersection() {
-  const check = () => {
-    const res = properInter(p1, p2, p3, p4);
-    console.log(
-      `Checking intersection between (${p1}~~${p2}) and ${p3}~~${p4}: ${res}`
-    );
-    return res;
-  };
-
-  let p1 = new Point(0, 0);
-  let p2 = new Point(1, 1);
-  let p3 = new Point(0.5, 1);
-  let p4 = new Point(0.5, -1);
-  assertTruthy(check());
-
-  p1 = new Point(25, 526);
-  p2 = new Point(62, 424);
-  p3 = new Point(4, 454);
-  p4 = new Point(307, 462);
-  assertTruthy(check());
-}
-
-function testSegPointDistance() {
-  const checkLessThan = n => {
-    const res = segPointDistance(p1, p2, p3);
-    console.log(
-      `Checking intersection between (${p1}~~${p2}) and ${p3}: ${res} <= ${n} = ${
-        res <= n
-      }`
-    );
-    return res <= n;
-  };
-
-  let p1 = new Point(0, 0);
-  let p2 = new Point(1, 1);
-  let p3 = new Point(0.5, 1);
-  assertTruthy(checkLessThan(1));
-
-  p1 = new Point(25, 500);
-  p2 = new Point(25, 400);
-  p3 = new Point(25, 350);
-  assertTruthy(checkLessThan(50));
-
-  p1 = new Point(25, 500);
-  p2 = new Point(25, 400);
-  p3 = new Point(0, 500);
-  assertTruthy(checkLessThan(50));
 }

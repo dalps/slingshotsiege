@@ -1,6 +1,6 @@
 import type { Entity, World } from "../ecs";
 import { DEG2RAD, lerp } from "../utils/MathUtils";
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 import { Interval, Transform } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import { Sprite } from "./components";
@@ -10,7 +10,7 @@ import { LayerName, Stage } from "./Stage";
 export function deathParticles(world: World, position: Point) {
   for (let i = 0; i < 20; i++) {
     const angle = lerp(0, 2 * Math.PI, Math.random());
-    const startVelocity = new Point(0, 1).rotate(angle).scale(20);
+    const startVelocity = pt(0, 1).rotate(angle).scale(20);
 
     world.create().add(
       new DynamicBody(position.clone(), {
@@ -37,7 +37,7 @@ export function bloodParticles(world: World, position: Point) {
 
   for (let i = 0; i < 20; i++) {
     const angle = lerp(130 * DEG2RAD, 230 * DEG2RAD, Math.random());
-    const startVelocity = new Point(0, 1)
+    const startVelocity = pt(0, 1)
       .rotate(angle)
       .scale(lerp(10, 30, Math.random()));
 
@@ -70,7 +70,7 @@ export function waterParticles(world: World, position: Point, n = 8) {
   const emitter = world.create().add(
     Interval(1 / 8, () => {
       const angle = lerp(90 * DEG2RAD, 210 * DEG2RAD, Math.random());
-      const startVelocity = new Point(0, 1)
+      const startVelocity = pt(0, 1)
         .rotate(angle)
         .scale(lerp(10, 30, Math.random()));
 

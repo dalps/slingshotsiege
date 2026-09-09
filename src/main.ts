@@ -11,7 +11,7 @@ import {
   Spawner,
   Sprite,
   Unicorn,
-  Weapon,
+  Weapon
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
@@ -31,7 +31,7 @@ import {
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
-import { Point } from "./utils/Point";
+import { pt } from "./utils/Point";
 import { initGradients } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
@@ -39,19 +39,8 @@ import {
   TransformSystem,
   type timestamp,
 } from "./utils/TimeUtils";
-// import assetsSvg from "/assets.svg?raw";
 
-// {
-//   document.querySelector("body")?.insertAdjacentHTML("beforeend", assetsSvg);
-
-//   getPaths("foal");
-//   getPaths("bat");
-//   getPaths("wraith");
-//   getPaths("adult");
-//   getPaths("expressions");
-
-//   document.querySelector("svg")?.remove();
-// }
+// generateSprites();
 
 const { registerComponents, createWorld } = ecs;
 
@@ -92,8 +81,8 @@ function init() {
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
 
   const unicorn = world.create().add(
-    new DynamicBody(new Point(200, ch * 0.7), {
-      // startVelocity: new Point(2, 0),
+    new DynamicBody(pt(200, ch * 0.7), {
+      // startVelocity: pt(2, 0),
     }),
     new Unicorn(),
     new Sprite(drawUnicorn),

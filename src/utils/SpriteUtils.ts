@@ -1,17 +1,19 @@
+import { rgb, type Color } from "../engine/color";
 import { LayerName, Stage } from "../engine/Stage";
-import { Point } from "./Point";
+import { Point, pt } from "./Point";
 
-export type DrawingPart = {
-  path: Path2D;
-  fill: string;
-  stroke: string;
-};
+type color = string | Color | undefined | CanvasGradient | Function;
 
-export type Drawing = { fill: DrawingPart[]; stroke: DrawingPart[] };
+export type RawDrawingPart = [string, color, color];
+
+export type DrawingPart = [Path2D, color, color];
+
+export type Drawing = DrawingPart[];
 
 export const WHITE = "#fff";
-export const BLACK = "#000";
+export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
+export const VIOLET = rgb(94, 50, 147);
 
 export const PASTEL_RAINBOW = [
   "#ff49db",
@@ -25,17 +27,16 @@ export const PASTEL_RAINBOW = [
 export const gradients: Record<string, CanvasGradient> = {};
 
 export const none = "none";
-export const url =
-  (s: string): (() => CanvasGradient) =>
-  () =>
-    gradients["rainbow"];
-// gradients[s];
+export const RAINBOW = () => gradients.rainbow;
 
-export const makePart = ([pathData, fill, stroke]): DrawingPart => ({
-  path: new Path2D(pathData),
-  fill,
-  stroke,
-});
+export const sprite = (rawData: RawDrawingPart[]): Drawing =>
+  rawData.map(
+    ([pathData, fill, stroke]): DrawingPart => [
+      new Path2D(pathData),
+      fill,
+      stroke,
+    ],
+  );
 
 export const makeGradient = (
   from: Point,
@@ -54,17 +55,14 @@ export const makeGradient = (
 
 export function initGradients() {
   gradients.rainbow = makeGradient(
-    new Point(),
-    new Point(Stage.cw, Stage.ch),
+    pt(),
+    pt(Stage.cw, Stage.ch),
     PASTEL_RAINBOW,
   );
 }
 
-export function drawParts(
-  ctx: CanvasRenderingContext2D,
-  parts: Record<string, DrawingPart>,
-) {
-  Object.entries(parts).forEach(([name, { path, fill, stroke }]) => {
+export function drawParts(ctx: CanvasRenderingContext2D, parts: Drawing) {
+  parts.forEach(([path, fill, stroke]) => {
     const get = (v: any) => (typeof fill === "function" ? v() : v);
 
     if (fill) {

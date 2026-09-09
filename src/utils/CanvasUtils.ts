@@ -52,7 +52,7 @@ export function star(
   ctx?.beginPath();
 
   for (let i = 0, phi = 0; i < points * 2; i++, phi += dphi) {
-    let p = new Point(Math.cos(phi), Math.sin(phi)).scale(
+    let p = pt(Math.cos(phi), Math.sin(phi)).scale(
       i % 2 === 0 ? outerRadius : innerRadius,
     );
     p = p.rotate(angle);
@@ -149,7 +149,6 @@ export function popsicle(from: Point, to: Point, color = "black") {
 export function circle(p: Point, r: number = 5, color = "blue") {
   const { ctx } = Stage;
 
-  ctx.resetTransform();
   ctx.beginPath();
   ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
   ctx.closePath();

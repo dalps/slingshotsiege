@@ -1,13 +1,13 @@
 import type { Query, World } from "../ecs";
 import { popsicle } from "../utils/CanvasUtils";
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 
 /**
  * A persistent force that can be applied to a dynamic body.
  */
 export class Force {
   constructor(
-    protected _direction: Point = new Point(0, 0),
+    protected _direction: Point = pt(0, 0),
     protected _magnitude: number = 1,
   ) {}
 
@@ -61,7 +61,7 @@ export class DynamicBody {
   public fixed = false;
 
   private _forces: Force[] = [];
-  private _aux = new Point(0, 0);
+  private _aux = pt(0, 0);
 
   constructor(
     startPosition: Point,
@@ -71,7 +71,7 @@ export class DynamicBody {
       friction = 0,
       orientation = 0,
       angularVelocity = 0,
-      startVelocity = new Point(0, 0),
+      startVelocity = pt(0, 0),
     } = {},
   ) {
     this.name = name;
@@ -162,4 +162,4 @@ export class DynamicBodySystem {
   }
 }
 
-export const GRAVITY = new Force(new Point(0, 1), 9.81);
+export const GRAVITY = new Force(pt(0, 1), 9.81);

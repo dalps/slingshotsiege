@@ -1,12 +1,35 @@
-type DrawingPart = {
-  path: string;
-  fill?: string | string[];
-  stroke?: string | string[];
-};
+import type { DrawingPart } from "./utils/SpriteUtils";
+import assetsSvg from "/assets.svg?raw";
 
-type Drawing = { fill: DrawingPart[]; stroke: DrawingPart[] };
+export function generateSprites() {
+  {
+    document.querySelector("body")?.insertAdjacentHTML("beforeend", assetsSvg);
 
-export function getPaths(groupLabel: string): Record<string, DrawingPart> {
+    let o = "";
+    o += getParts("foal");
+    o += getParts("bat");
+    o += getParts("wraith");
+    o += getParts("adult");
+    o += getParts("furious");
+    o += getParts("anguished");
+    o += getParts("content");
+    o += `export const expressions = [
+  content,
+  anguished,
+  furious,
+];\n`;
+    o += getParts("life");
+    o += getParts("rainbowFace");
+
+    o = o.replaceAll(`rgb(0, 0, 0)`, "BLACK");
+
+    console.log(o);
+
+    document.querySelector("svg")?.remove();
+  }
+}
+
+export function parsePaths(groupLabel: string): Record<string, DrawingPart> {
   // stackoverflow.com/questions/45110893/select-elements-by-attributes-with-colon
   // It doesn't work when I do it with live-server...
   const group = document.querySelector<SVGGElement>(
@@ -26,13 +49,23 @@ export function getPaths(groupLabel: string): Record<string, DrawingPart> {
       const key = p.getAttribute("inkscape:label"); // || p.id;
       const pathData = p.getAttribute("d");
 
-      if (!key || !pathData) return;
+      if (!key || !pathData || p.style.display === "none") return;
 
       const { stroke, fill } = p.style;
       const path = pathData; // .replaceAll(/(\w+)\s*(\w+)\s*/g, "$1 $2 ");
 
-      obj[key] = { path, fill, stroke };
+      obj[key] = { path, fill: replaceUrl(fill), stroke: replaceUrl(stroke) };
+
+      function replaceUrl(prop): string | string[] | undefined {
+        return prop.includes("url") ? "RAINBOW" : prop;
+      }
     });
+
+  return obj;
+}
+
+export function getPartsObject(groupLabel: string) {
+  const obj = parsePaths(groupLabel);
 
   let output = `${groupLabel} = {`;
 
@@ -48,5 +81,28 @@ export function getPaths(groupLabel: string): Record<string, DrawingPart> {
 
   output += "}";
   console.log(output);
+
   return obj;
+}
+
+export function getParts(groupLabel: string) {
+  const obj = parsePaths(groupLabel);
+
+  let output = `export const ${groupLabel} = sprite([`;
+
+  Object.entries(obj).forEach(([k, { path, ...fields }]) => {
+    // output += `makePart([\`${path}\`,`;
+    output += `[\`${path}\`,`;
+    ["fill", "stroke"].forEach((k) => {
+      const v = fields[k];
+      if (v && v !== `none`) output += `${v}`;
+      output += ",";
+    });
+    output += `],`;
+  });
+
+  output += "])\n";
+  console.log(output);
+
+  return output;
 }

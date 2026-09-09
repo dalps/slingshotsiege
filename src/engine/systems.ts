@@ -3,13 +3,14 @@ import { drawFoal } from "../entities/foal";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
 import { damp2I, distribute, lerp, RAD2DEG } from "../utils/MathUtils";
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 import { Timeout, Transform, type Transformer } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import {
   DragInput,
   Frozen,
   Game,
+  GAME_TITLE,
   GameState,
   Health,
   Hunter,
@@ -132,11 +133,10 @@ export class DamageSystem {
               );
 
               unicornData.expression = UnicornEmotion.Anguished;
-              this.world.query(Prey).length > 0 && e.add(
-                Timeout(1, () => {
+              this.world.query(Prey).length > 0 &&
+                Timeout(e, 1, () => {
                   unicornData.expression = UnicornEmotion.Furious;
-                }),
-              );
+                });
             },
           );
         }
@@ -204,7 +204,7 @@ export class RainbowSystem {
 
         this.world.query(Unicorn).iterate((e, unicorn: Unicorn) => {
           ((unicorn.expression = UnicornEmotion.Content),
-            this.world.create().add(Timeout(4, () => unicorn.getPissed())));
+            Timeout(this.world.create(), 4, () => unicorn.getPissed()));
         });
 
         // Pause spawners
@@ -217,39 +217,30 @@ export class RainbowSystem {
           h.add(new Frozen());
         });
 
-        this.world.create().add(
-          Timeout(2, () => {
-            // Kill all foes after a short timeout
-            zzfxP(sfx.explosion);
+        Timeout(this.world.create(), 2, () => {
+          // Kill all foes after a short timeout
+          zzfxP(sfx.explosion);
 
-            console.log("killing all enemies...");
+          this.world
+            .query(Frozen, DynamicBody)
+            .iterate((h, _, hunterBody: DynamicBody) => {
+              deathParticles(this.world, hunterBody.position);
+              h.delete();
 
-            this.world
-              .query(Frozen, DynamicBody)
-              .iterate((h, _, hunterBody: DynamicBody) => {
-                console.log("hello?");
-                deathParticles(this.world, hunterBody.position);
-                h.delete();
+              weapon.points += FIRST_KILL_POINTS;
 
-                weapon.points += FIRST_KILL_POINTS;
-
-                showScoreForKill(
-                  this.world,
-                  FIRST_KILL_POINTS,
-                  hunterBody.position,
-                );
-              });
-
-            // Restart spawners
-            this.world
-              .create()
-              .add(
-                Timeout(1, () =>
-                  this.world.create().add(new Spawner(this.world)),
-                ),
+              showScoreForKill(
+                this.world,
+                FIRST_KILL_POINTS,
+                hunterBody.position,
               );
-          }),
-        );
+            });
+
+          // Restart spawners
+          Timeout(this.world.create(), 1, () =>
+            this.world.create().add(new Spawner(this.world)),
+          );
+        });
 
         this.world
           .query(Score)
@@ -315,7 +306,7 @@ function showScoreForKill(world: World, score: number, position: Point) {
 
   world.create().add(
     new DynamicBody(position, {
-      startVelocity: new Point(0, -10),
+      startVelocity: pt(0, -10),
     }),
     new Sprite(() => drawText(scoreText, position, { fill: YELLOW, size: 36 })),
     new Transform({ duration: 1, end: (e) => e.delete() }),
@@ -367,7 +358,7 @@ export class FiredProjectileSystem {
           // console.log("Replacing sprite...");
           weapon.state = WeaponState.Used;
           weaponBody.clearForces();
-          weaponBody.addForce(new Force(new Point(0, 1), 5));
+          weaponBody.addForce(new Force(pt(0, 1), 5));
           entity.remove(Sprite);
           entity.add(new Sprite(drawFarGoneWeapon));
         }
@@ -459,51 +450,45 @@ export class GameCycle {
       },
     );
 
-    this.world.create().add(
-      Timeout(2, () => {
-        const ui = Stage.getLayer(LayerName.UI)!.canvas;
+    Timeout(this.world.create(), 2, () => {
+      const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
-        this.currentSong = zzfxP(...SongLibrary.death);
+      this.currentSong = zzfxP(...SongLibrary.death);
 
-        const goodbye = this.world
-          .create()
-          .add(
-            new Sprite(() =>
-              drawText(
-                "I failed you, children...",
-                new Point(cw * 0.5, ch * 0.3),
-              ),
-            ),
-          );
-
-        this.score.add(
-          new Sprite(() => {
-            const text = `Final score: ${this.score.get(Score).totalScore}`;
-            drawText(text, new Point(cw * 0.5, ch * 0.4), {
-              size: 28,
-              fill: YELLOW,
-            });
-          }),
+      const goodbye = this.world
+        .create()
+        .add(
+          new Sprite(() =>
+            drawText("I failed you, children...", pt(cw * 0.5, ch * 0.3)),
+          ),
         );
-        this.world.create().add(
-          Timeout(2, () => {
-            const retry = this.world.create().add(
-              new Sprite(() =>
-                drawText("Tap to retry", new Point(cw * 0.5, ch * 0.7), {
-                  size: 24,
-                }),
-              ),
-            );
 
-            ui.onclick = () => {
-              goodbye.delete();
-              retry.delete();
-              this.startWave();
-            };
-          }),
+      this.score.add(
+        new Sprite(() => {
+          const text = `Final score: ${this.score.get(Score).totalScore}`;
+          drawText(text, pt(cw * 0.5, ch * 0.4), {
+            size: 28,
+            fill: YELLOW,
+          });
+        }),
+      );
+
+      Timeout(this.world.create(), 2, () => {
+        const retry = this.world.create().add(
+          new Sprite(() =>
+            drawText("Tap to retry", pt(cw * 0.5, ch * 0.7), {
+              size: 24,
+            }),
+          ),
         );
-      }),
-    );
+
+        ui.onclick = () => {
+          goodbye.delete();
+          retry.delete();
+          this.startWave();
+        };
+      });
+    });
   }
 
   startWave() {
@@ -521,7 +506,7 @@ export class GameCycle {
     this.score.add(
       new Sprite(() => {
         const text = `Score ${this.score.get(Score).totalScore}`;
-        drawText(text, new Point(cw, 0), {
+        drawText(text, pt(cw, 0), {
           centered: false,
           size: 32,
         });
@@ -555,7 +540,7 @@ export class GameCycle {
     const title = this.world.create().add(
       new Sprite(() => {
         const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
-        drawText("Sling the Horn", new Point(cw * 0.5, ch * 0.2), {
+        drawText(GAME_TITLE, pt(cw * 0.5, ch * 0.2), {
           fill: YELLOW,
           lineWidth: 2,
           size: 64,
@@ -566,7 +551,7 @@ export class GameCycle {
     const text = this.world.create().add(
       new Sprite(() => {
         const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
-        drawText("Tap to start", new Point(cw * 0.5, ch * 0.5));
+        drawText("Tap to start", pt(cw * 0.5, ch * 0.5));
       }),
     );
 
@@ -605,16 +590,12 @@ export class ReloadSystem {
 }
 
 export function spawnFoals(world: World) {
-  const { cw, ch } = Stage.setActiveLayer("game");
+  const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
   const width = 0.8;
   const offset = cw * (1 - width);
   distribute(offset, cw * width, 4, (x, idx) => {
     world
       .create()
-      .add(
-        new Prey(),
-        new DynamicBody(new Point(x, ch * 0.85)),
-        new Sprite(drawFoal),
-      );
+      .add(new Prey(), new DynamicBody(pt(x, ch * 0.85)), new Sprite(drawFoal));
   });
 }

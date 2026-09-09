@@ -129,7 +129,7 @@ export class Stage {
   }
 }
 
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 
 export class CanvasHelper {
   public canvas: HTMLCanvasElement;
@@ -172,14 +172,14 @@ export class CanvasHelper {
 
   resolveMousePosition(e: MouseEvent): Point {
     if (e.offsetX) {
-      return new Point(e.offsetX, e.offsetY);
+      return pt(e.offsetX, e.offsetY);
     }
 
-    return new Point(e.layerX, e.layerY);
+    return pt(e.layerX, e.layerY);
   }
 
   resolveTouchPosition(e: TouchEvent): Point {
     const t = e.touches[0];
-    return new Point(t.clientX - this.rect.x, t.clientY - this.rect.y);
+    return pt(t.clientX - this.rect.x, t.clientY - this.rect.y);
   }
 }

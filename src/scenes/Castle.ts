@@ -1,7 +1,11 @@
+import { rgb } from "../engine/color";
 import { LayerName, Stage } from "../engine/Stage";
 import { makeGradient } from "../utils/CanvasUtils";
 import { distribute } from "../utils/MathUtils";
-import { Point } from "../utils/Point";
+import { pt } from "../utils/Point";
+import { WHITE } from "../utils/SpriteUtils";
+
+export let skyGradient: CanvasGradient;
 
 /**
  * Draws the game's backdrop.
@@ -11,15 +15,15 @@ function draw() {
 
   const grassStart = 0.8;
   const wallStart = 0.6;
-  const brickSize = new Point(40, 20); // pixels
+  const brickSize = pt(40, 20); // pixels
 
-  ctx.fillStyle = "hsla(0, 0%, 100%, 1.00)";
+  ctx.fillStyle = WHITE;
   ctx.fillRect(0, 0, cw, ch);
 
   // sky
-  const skyGradient = makeGradient(new Point(), new Point(0, ch * grassStart), [
-    "hsla(201, 100%, 65%, 1.00)",
-    "hsla(205, 100%, 92%, 1.00)",
+  skyGradient = makeGradient(pt(), pt(0, ch * grassStart), [
+    rgb(77, 193, 255),
+    rgb(214, 238, 255),
   ]);
   ctx.fillStyle = skyGradient;
   ctx.fillRect(0, 0, cw, grassStart * ch);
@@ -27,7 +31,7 @@ function draw() {
   {
     // white brick wall
     const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.BG_3);
-    ctx.fillStyle = "#e8e8e8ff";
+    ctx.fillStyle = "#e8e8e8";
     ctx.fillRect(0, ch * wallStart, cw, ch * (grassStart - wallStart));
 
     const nBricks = Math.floor(cw / brickSize.x);
@@ -45,11 +49,10 @@ function draw() {
     });
 
     // grass
-    const fieldGradient = makeGradient(
-      new Point(0, ch * grassStart),
-      new Point(0, ch),
-      ["hsla(120, 78%, 48%, 1.00)", "hsla(120, 89%, 36%, 1.00)"],
-    );
+    const fieldGradient = makeGradient(pt(0, ch * grassStart), pt(0, ch), [
+      rgb(27, 218, 27),
+      rgb(10, 174, 10),
+    ]);
     ctx.fillStyle = fieldGradient;
     ctx.fillRect(0, ch * grassStart, cw, grassStart * ch);
   }

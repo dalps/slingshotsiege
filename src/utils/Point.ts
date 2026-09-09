@@ -9,9 +9,7 @@ export class Point {
     this.y = y || (y !== 0 ? this.x : 0);
   }
 
-  static ZERO = new Point(0, 0);
-
-  static random(min = new Point(0, 0), max = new Point(1, 1)) {
+  static random(min = pt(0, 0), max = pt(1, 1)) {
     return new Point(
       M.lerp(min.x, max.x, Math.random()),
       M.lerp(min.y, max.y, Math.random()),
@@ -39,7 +37,7 @@ export class Point {
   rotate(phi: number) {
     const cos = Math.cos(phi);
     const sin = Math.sin(phi);
-    return new Point(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
+    return pt(this.x * cos - this.y * sin, this.x * sin + this.y * cos);
   }
 
   rotateAbout(c: Point, phi: number) {
@@ -62,7 +60,7 @@ export class Point {
   }
 
   clone() {
-    return new Point(this.x, this.y);
+    return pt(this.x, this.y);
   }
 
   equals(p: Point) {
@@ -121,7 +119,7 @@ export class Point {
    * Get a new point rotated 90 degrees counterclockwise.
    */
   perp() {
-    return new Point(this.y, -this.x);
+    return pt(this.y, -this.x);
   }
 
   dot(p: Point): number {
@@ -136,19 +134,24 @@ export class Point {
     return M.orient(a, b, this) === 0 && M.inDisk(a, b, this);
   }
 
-  projectI(i: Point, j: Point) {
+  project(i: Point, j: Point) {
     return this.set(this.dot(i), this.dot(j));
   }
 
-  project(i: Point, j: Point) {
-    return this.clone().projectI(i, j);
-  }
-
+  /**
+   * Returns the angle of the vector relative to the vertical axis.
+   * The returned angle is in radians and varies from 0 to +/-Math.PI.
+   * The sign is the same as the x component.
+   */
   angle() {
-    return Math.atan2(this.x, -this.y)
+    return Math.atan2(this.x, -this.y);
   }
 
   toString() {
     return `(${this.x},${this.y})`;
   }
 }
+
+export const pt = (x?: number, y?: number) => new Point(x, y);
+
+export const ZERO = pt();

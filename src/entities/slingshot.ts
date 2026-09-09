@@ -4,7 +4,7 @@ import { ElasticLine } from "../engine/ElasticLine";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { DEG2RAD } from "../utils/MathUtils";
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 import { WHITE } from "../utils/SpriteUtils";
 
 const GRAB_DISTANCE = 65;
@@ -19,7 +19,7 @@ export class SlingshotFrame {
 
   anchorLeft: Point;
   anchorRight: Point;
-  size = new Point(20, 180);
+  size = pt(20, 180);
   armAngle = 70;
   armLength = 80;
   position: Point;
@@ -32,8 +32,8 @@ export class SlingshotFrame {
   constructor(world: World) {
     const { cw, ch } = Stage;
 
-    this.position = new Point(cw * 0.5 - this.size.x * 0.5, ch * 0.9);
-    this.armPos = new Point(cw * 0.5, this.position.y - this.size.y);
+    this.position = pt(cw * 0.5 - this.size.x * 0.5, ch * 0.9);
+    this.armPos = pt(cw * 0.5, this.position.y - this.size.y);
     const { armAngle, armLength, armPos } = this;
     const [anchor1, anchor2] = [1, -1].map((o) =>
       armPos
@@ -167,7 +167,7 @@ function drawSlingshotStrips(e: Entity) {
   const joints: DynamicBody[] = (e.get(ElasticLine) as ElasticLine).joints.map(
     (e) => e.get(DynamicBody),
   );
-  const { ctx, cw, ch } = Stage.setActiveLayer("game");
+  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.Game);
 
   ctx.lineWidth = 5;
   ctx.lineCap = "round";
@@ -236,5 +236,3 @@ export function drawFarGoneWeapon(e: Entity) {
   ctx.fill();
   ctx.resetTransform();
 }
-
-export function drawScore(score: number) {}

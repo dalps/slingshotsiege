@@ -7,13 +7,14 @@ import {
 } from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { lerp, lerp2 } from "../utils/MathUtils";
-import { Point } from "../utils/Point";
+import { Point, pt } from "../utils/Point";
 import { Interval, Transform, type timestamp } from "../utils/TimeUtils";
 import { DynamicBody } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
 
+export const GAME_TITLE = "Slingshot Siege";
 export const START_LIVES = 3;
 
 export class Health {
@@ -145,7 +146,6 @@ export class DragInput {
     };
 
     this.destructor = () => {
-      console.log("Removing DragInput...");
       ui.removeEventListener("mousedown", handleMouseDown);
       ui.removeEventListener("mousemove", handleMouseMove);
       ui.removeEventListener("mouseup", handleMouseUp);
@@ -166,7 +166,7 @@ export const enum UnicornEmotion {
   Furious,
 }
 
-export const UNICORN_EYES = new Point(55, -175);
+export const UNICORN_EYES = pt(55, -175);
 
 export class Unicorn {
   expression = UnicornEmotion.Content;
@@ -174,7 +174,7 @@ export class Unicorn {
   boundingBoxSize = new Point(200);
   horn: Entity | null = null;
   hornProgress = 0;
-  hornOrigin = new Point(60, -178);
+  hornOrigin = pt(60, -178);
 
   getPissed() {
     this.expression = UnicornEmotion.Furious;
@@ -276,7 +276,7 @@ export class Spawner {
             .create()
             .add(
               new Hunter(),
-              new DynamicBody(new Point(Math.random() * Stage.cw, 0)),
+              new DynamicBody(pt(Math.random() * Stage.cw, 0)),
               new Sprite(drawEnemy),
             ),
         ),
@@ -287,8 +287,8 @@ export class Spawner {
         const dice = Math.random() < 0.5;
         world.create().add(
           new Rainbow(),
-          new DynamicBody(new Point(dice ? 0 : Stage.cw, 100), {
-            startVelocity: new Point(50, 0).scale(dice ? 1 : -1),
+          new DynamicBody(pt(dice ? 0 : Stage.cw, 100), {
+            startVelocity: pt(50, 0).scale(dice ? 1 : -1),
           }),
           new Sprite(drawRainbow),
         );
