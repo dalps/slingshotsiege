@@ -6,11 +6,12 @@ export type seconds = number;
 export const TIME_SCALE = 1 / 100;
 
 const fromSeconds = (s: seconds) => s * 1000 * TIME_SCALE;
+const toSeconds = (s: seconds) => s / 1000 / TIME_SCALE;
 
 export interface Transformer {
   duration: seconds;
   update?: (e: Entity, stage: number) => void;
-  end: (e: Entity) => void;
+  end?: (e: Entity) => void;
   next?: Transformer;
 }
 
@@ -18,7 +19,6 @@ export class Transform {
   remaining: number;
 
   constructor(public transformer: Transformer) {
-    transformer.duration = fromSeconds(transformer.duration);
     this.remaining = transformer.duration;
   }
 }
@@ -53,6 +53,8 @@ export class TransformSystem {
   }
 
   update(delta: number) {
+    delta = toSeconds(delta);
+
     this.query.iterate((entity: Entity, transform: Transform) => {
       transform.remaining -= delta;
 

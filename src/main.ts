@@ -11,7 +11,7 @@ import {
   Spawner,
   Sprite,
   Unicorn,
-  Weapon
+  Weapon,
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
@@ -31,13 +31,15 @@ import {
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
-import { pt } from "./utils/Point";
+import { lerp } from "./utils/MathUtils";
+import { Point, pt } from "./utils/Point";
 import { initGradients } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
   Transform,
   TransformSystem,
   type timestamp,
+  type Transformer,
 } from "./utils/TimeUtils";
 
 // generateSprites();
@@ -80,13 +82,48 @@ function init() {
 
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
 
+  const startPosition = pt(200, ch * 0.7);
   const unicorn = world.create().add(
-    new DynamicBody(pt(200, ch * 0.7), {
+    new DynamicBody(startPosition.clone(), {
       // startVelocity: pt(2, 0),
     }),
     new Unicorn(),
     new Sprite(drawUnicorn),
   );
+
+  // Unicorn animation
+  const bounce = (t) => Math.abs(Math.sin(t * 10 * Math.PI)) * 5;
+
+  const { position }: DynamicBody = unicorn.get(DynamicBody);
+  let startPos = position.clone();
+
+  const hopToXAndRest = (
+    xTarget: number,
+    duration: number,
+    rest: number,
+  ): Transformer => {
+    return {
+      duration,
+      update(e, t) {
+        position.set(lerp(startPos.x, xTarget, t), startPosition.y - bounce(t));
+      },
+      next: {
+        duration: rest,
+        end(e) {
+          startPos.copy(position);
+          // todo: flip sprite
+        },
+      },
+    };
+  };
+
+  const p1 = hopToXAndRest(cw - 200, 5, 1);
+  const p2 = hopToXAndRest(200, 5, 1);
+
+  p1.next!.next = p2;
+  p2.next!.next = p1;
+
+  unicorn.add(new Transform(p1));
 
   const game = world.create().add(new Game());
 

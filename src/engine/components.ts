@@ -15,6 +15,7 @@ import { LayerName, Stage } from "./Stage";
 type DrawFn = (entity: Entity) => void;
 
 export const GAME_TITLE = "Slingshot Siege";
+export const RAINBOW_PERIOD = 10;
 export const START_LIVES = 3;
 
 export class Health {
@@ -171,7 +172,7 @@ export const UNICORN_EYES = pt(55, -175);
 export class Unicorn {
   expression = UnicornEmotion.Content;
   headTilt = 0;
-  boundingBoxSize = new Point(200);
+  boundingBoxSize = pt(200);
   horn: Entity | null = null;
   hornProgress = 0;
   hornOrigin = pt(60, -178);
@@ -283,7 +284,7 @@ export class Spawner {
       );
 
     this.powerupInterval = world.create().add(
-      Interval(2, () => {
+      Interval(RAINBOW_PERIOD, () => {
         const dice = Math.random() < 0.5;
         world.create().add(
           new Rainbow(),
