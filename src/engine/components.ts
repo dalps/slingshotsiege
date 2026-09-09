@@ -1,6 +1,10 @@
 import type { Entity, World } from "../ecs";
 import { drawEnemy } from "../entities/enemy";
-import { drawRainbow } from "../entities/rainbow";
+import {
+  drawRainbow,
+  RAINBOW_INNER_RADIUS,
+  RAINBOW_OUTER_RADIUS,
+} from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { lerp, lerp2 } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
@@ -162,6 +166,8 @@ export const enum UnicornEmotion {
   Furious,
 }
 
+export const UNICORN_EYES = new Point(55, -175);
+
 export class Unicorn {
   expression = UnicornEmotion.Content;
   headTilt = 0;
@@ -255,6 +261,8 @@ export class Game {
   wave = 0;
 }
 
+export class Frozen {}
+
 export class Spawner {
   enemyInterval: Entity;
   powerupInterval: Entity;
@@ -280,7 +288,7 @@ export class Spawner {
         world.create().add(
           new Rainbow(),
           new DynamicBody(new Point(dice ? 0 : Stage.cw, 100), {
-            startVelocity: new Point(10, 0).scale(dice ? 1 : -1),
+            startVelocity: new Point(50, 0).scale(dice ? 1 : -1),
           }),
           new Sprite(drawRainbow),
         );
@@ -290,12 +298,19 @@ export class Spawner {
 
   destructor() {
     this.enemyInterval.delete();
+    this.powerupInterval.delete();
   }
 }
 
 export class Rainbow {
-  innerRadius = 80;
-  outerRadius = 100;
-  radius = 20;
+  innerRadius = RAINBOW_INNER_RADIUS;
+  outerRadius = RAINBOW_OUTER_RADIUS;
+  radius = 40;
+  angle = 0;
   gradientAngle = 0;
+  particleEmitter: Entity;
+
+  constructor(world: World) {
+    // this.particleEmitter = world.create().add(new Interval(1 / 8, () => world.create().add(new Sprite(dra))));
+  }
 }

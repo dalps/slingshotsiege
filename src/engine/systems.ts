@@ -2,12 +2,13 @@ import { World, type Entity, type Query } from "../ecs";
 import { drawFoal } from "../entities/foal";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
-import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
+import { damp2I, distribute, lerp, RAD2DEG } from "../utils/MathUtils";
 import { Point } from "../utils/Point";
-import { Timeout, Transform } from "../utils/TimeUtils";
+import { Timeout, Transform, type Transformer } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import {
   DragInput,
+  Frozen,
   Game,
   GameState,
   Health,
@@ -18,11 +19,12 @@ import {
   Spawner,
   Sprite,
   Unicorn,
+  UNICORN_EYES,
   UnicornEmotion,
   Weapon,
   WeaponState,
 } from "./components";
-import { bloodParticles, deathParticles } from "./particles";
+import { bloodParticles, deathParticles, waterParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
 import { comboSound, megaKillSound, sfx, SongLibrary } from "./sfx";
 import { LayerName, Stage } from "./Stage";
@@ -96,7 +98,7 @@ export class DamageSystem {
     this.world = world;
     this.bounties = world.query(Prey, Health, DynamicBody);
     this.hunters = world.query(Hunter, DynamicBody);
-    this.unicorn = this.world.query(Unicorn);
+    this.unicorn = this.world.query(Unicorn, DynamicBody);
   }
 
   update() {
@@ -122,16 +124,47 @@ export class DamageSystem {
           preyEntity.delete();
           // todo: display carcass sprite
 
-          this.unicorn.iterate((e, unicornData: Unicorn) => {
-            unicornData.expression = UnicornEmotion.Anguished;
-            e.add(
-              Timeout(1, () => {
-                unicornData.expression = UnicornEmotion.Furious;
-              }),
-            );
-          });
+          this.unicorn.iterate(
+            (e, unicornData: Unicorn, unicornBody: DynamicBody) => {
+              waterParticles(
+                this.world,
+                unicornBody.position.add(UNICORN_EYES),
+              );
+
+              unicornData.expression = UnicornEmotion.Anguished;
+              this.world.query(Prey).length > 0 && e.add(
+                Timeout(1, () => {
+                  unicornData.expression = UnicornEmotion.Furious;
+                }),
+              );
+            },
+          );
         }
       }
+    });
+  }
+}
+
+export class RainbowMovement {
+  rainbows: Query;
+  world: World;
+
+  constructor(world: World) {
+    this.world = world;
+    this.rainbows = world.query(Rainbow, DynamicBody);
+  }
+
+  update(dt: number) {
+    this.rainbows.iterate((r, rainbow: Rainbow, rainbowBody: DynamicBody) => {
+      rainbow.angle += dt * 0.1;
+      const { ctx, cw, ch } = Stage;
+
+      const transform: Transformer = {
+        duration: 3,
+        update(e, stage) {
+          rainbowBody.position.set(lerp(0, cw, stage), 100);
+        },
+      };
     });
   }
 }
@@ -140,6 +173,7 @@ export class RainbowSystem {
   weapons: Query;
   rainbows: Query;
   hunter: Query;
+  spawners: Query;
   world: World;
 
   constructor(world: World) {
@@ -147,6 +181,7 @@ export class RainbowSystem {
     this.weapons = world.query(Weapon, DynamicBody);
     this.rainbows = world.query(Rainbow, DynamicBody);
     this.hunter = world.query(Hunter, DynamicBody);
+    this.spawners = world.query(Spawner);
   }
 
   update(dt) {
@@ -167,36 +202,54 @@ export class RainbowSystem {
         weapon.points += FIRST_KILL_POINTS;
         showScoreForKill(this.world, FIRST_KILL_POINTS, rainbowBody.position);
 
-        this.world
-          .query(Unicorn)
-          .iterate(
-            (e, unicorn: Unicorn) =>
-              (unicorn.expression = UnicornEmotion.Content),
-          );
+        this.world.query(Unicorn).iterate((e, unicorn: Unicorn) => {
+          ((unicorn.expression = UnicornEmotion.Content),
+            this.world.create().add(Timeout(4, () => unicorn.getPissed())));
+        });
 
-        // todo: pause spawners
+        // Pause spawners
+        this.spawners.iterate((e) => e.delete());
 
-        // Stop & kill all foes
+        // Stop and disarm all foes
         this.hunter.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
           hunterBody.velocity.set(0, 0);
           h.remove(Hunter); // Disable weapon interaction
-
-          this.world.create().add(
-            Timeout(2, () => {
-              zzfxP(sfx.explosion);
-              deathParticles(this.world, hunterBody.position);
-              h.delete();
-
-              weapon.points += FIRST_KILL_POINTS;
-
-              showScoreForKill(
-                this.world,
-                FIRST_KILL_POINTS,
-                hunterBody.position,
-              );
-            }),
-          );
+          h.add(new Frozen());
         });
+
+        this.world.create().add(
+          Timeout(2, () => {
+            // Kill all foes after a short timeout
+            zzfxP(sfx.explosion);
+
+            console.log("killing all enemies...");
+
+            this.world
+              .query(Frozen, DynamicBody)
+              .iterate((h, _, hunterBody: DynamicBody) => {
+                console.log("hello?");
+                deathParticles(this.world, hunterBody.position);
+                h.delete();
+
+                weapon.points += FIRST_KILL_POINTS;
+
+                showScoreForKill(
+                  this.world,
+                  FIRST_KILL_POINTS,
+                  hunterBody.position,
+                );
+              });
+
+            // Restart spawners
+            this.world
+              .create()
+              .add(
+                Timeout(1, () =>
+                  this.world.create().add(new Spawner(this.world)),
+                ),
+              );
+          }),
+        );
 
         this.world
           .query(Score)
@@ -331,7 +384,9 @@ export class GameCycle {
   gameState: Query;
   spawners: Query;
   slingshot: Query;
+  unicorns: Query;
   score: Entity;
+  tearEmitter: Entity | null = null;
   currentSong: AudioBufferSourceNode | null = null;
 
   constructor(public world: World) {
@@ -339,6 +394,7 @@ export class GameCycle {
     this.gameState = world.query(Game);
     this.spawners = world.query(Spawner);
     this.slingshot = world.query(SlingshotFrame);
+    this.unicorns = world.query(Unicorn, DynamicBody);
     this.score = this.world.create().add(new Score());
   }
 
@@ -390,6 +446,19 @@ export class GameCycle {
 
     const { ch, cw } = Stage.setActiveLayer(LayerName.Info);
 
+    // Make mom shed tears indefinitely
+    this.unicorns.iterate(
+      (e, unicornData: Unicorn, unicornBody: DynamicBody) => {
+        unicornData.expression = UnicornEmotion.Anguished;
+
+        this.tearEmitter = waterParticles(
+          this.world,
+          unicornBody.position.add(UNICORN_EYES),
+          Infinity,
+        );
+      },
+    );
+
     this.world.create().add(
       Timeout(2, () => {
         const ui = Stage.getLayer(LayerName.UI)!.canvas;
@@ -400,13 +469,16 @@ export class GameCycle {
           .create()
           .add(
             new Sprite(() =>
-              drawText("Goodbye, children...", new Point(cw * 0.5, ch * 0.3)),
+              drawText(
+                "I failed you, children...",
+                new Point(cw * 0.5, ch * 0.3),
+              ),
             ),
           );
 
         this.score.add(
           new Sprite(() => {
-            const text = `Total score: ${this.score.get(Score).totalScore}`;
+            const text = `Final score: ${this.score.get(Score).totalScore}`;
             drawText(text, new Point(cw * 0.5, ch * 0.4), {
               size: 28,
               fill: YELLOW,
@@ -465,6 +537,13 @@ export class GameCycle {
     // Recreate foals and restore health
     this.preys.length <= 0 && spawnFoals(this.world);
     this.preys.iterate((e) => e.add(new Health()));
+
+    this.tearEmitter?.exists && this.tearEmitter.delete();
+
+    // Make mom angry
+    this.unicorns.iterate((e, unicornData: Unicorn) => {
+      unicornData.expression = UnicornEmotion.Furious;
+    });
 
     // Sky transition
     game.state = GameState.Ongoing;

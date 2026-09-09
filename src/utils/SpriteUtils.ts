@@ -1,4 +1,5 @@
 import { LayerName, Stage } from "../engine/Stage";
+import { Point } from "./Point";
 
 export type DrawingPart = {
   path: Path2D;
@@ -12,7 +13,7 @@ export const WHITE = "#fff";
 export const BLACK = "#000";
 export const RED = "#f00";
 
-export const colors = [
+export const PASTEL_RAINBOW = [
   "#ff49db",
   "#bab3ff",
   "#60f6ff",
@@ -36,9 +37,13 @@ export const makePart = ([pathData, fill, stroke]): DrawingPart => ({
   stroke,
 });
 
-export const makeGradient = (colors: string[]) => {
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_1);
-  let g = ctx.createLinearGradient(0, 0, cw, ch);
+export const makeGradient = (
+  from: Point,
+  to: Point,
+  colors: string[],
+  ctx: CanvasRenderingContext2D = Stage.getLayer(LayerName.BG_1)!.ctx,
+) => {
+  let g = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
 
   colors.forEach((s, i) => {
     g.addColorStop(i / colors.length, s);
@@ -48,7 +53,11 @@ export const makeGradient = (colors: string[]) => {
 };
 
 export function initGradients() {
-  gradients.rainbow = makeGradient(colors);
+  gradients.rainbow = makeGradient(
+    new Point(),
+    new Point(Stage.cw, Stage.ch),
+    PASTEL_RAINBOW,
+  );
 }
 
 export function drawParts(

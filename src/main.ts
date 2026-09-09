@@ -1,6 +1,7 @@
 import ecs from "./ecs";
 import {
   DragInput,
+  Frozen,
   Game,
   Health,
   Hunter,
@@ -20,13 +21,13 @@ import {
   DamageSystem,
   FiredProjectileSystem,
   GameCycle,
+  RainbowMovement,
   RainbowSystem,
   ReloadSystem,
   Render,
   spawnFoals,
   TargetingSystem,
 } from "./engine/systems";
-import { drawRainbow } from "./entities/rainbow";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
@@ -57,6 +58,7 @@ const { registerComponents, createWorld } = ecs;
 registerComponents(
   Hunter,
   Health,
+  Frozen,
   Prey,
   Score,
   Game,
@@ -78,6 +80,7 @@ const gameCycle = new GameCycle(world);
 
 function init() {
   Stage.init();
+  Stage.setActiveLayer(LayerName.BG_1);
   initGradients();
 
   Castle.draw();
@@ -111,6 +114,7 @@ const pipeline = [
   new DamageSystem(world),
   new ReloadSystem(world),
   new RainbowSystem(world),
+  new RainbowMovement(world),
   new FiredProjectileSystem(world),
   new Render(world),
   gameCycle,
@@ -122,7 +126,7 @@ function loop(now: timestamp) {
   let delta = now - last;
   last = now;
 
-  // Don't let delta get too big (happens e.g. when the user switches tab)
+  // Don't let delta get too big (happens e.g. when the user leaves the tab)
   if (delta > 1000) {
     delta = 1000 / 60;
   }

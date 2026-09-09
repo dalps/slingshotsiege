@@ -6,7 +6,7 @@ import { LayerName, Stage } from "../engine/Stage";
 import { Point } from "../utils/Point";
 import {
   BLACK,
-  colors,
+  PASTEL_RAINBOW,
   drawParts,
   makePart,
   RED,
@@ -106,8 +106,8 @@ export function drawUnicorn(e: Entity) {
 
   const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_2);
   let rainbowGradient = ctx.createLinearGradient(0, 0, cw, ch);
-  colors.forEach((s, i) => {
-    rainbowGradient.addColorStop(i / colors.length, s);
+  PASTEL_RAINBOW.forEach((s, i) => {
+    rainbowGradient.addColorStop(i / PASTEL_RAINBOW.length, s);
   });
 
   const size = new Point(200);
