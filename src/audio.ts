@@ -75,6 +75,8 @@ function generateNotes(fn, duration, volume) {
       get: function () {
         if (!sound) {
           sound = generateAudioBuffer(fn(toFreq(note)), duration, volume);
+          sound.note = note;
+          sound.toString = () => toNoteString(note);
         }
 
         return sound;

@@ -394,6 +394,8 @@ export class GameCycle {
       Timeout(2, () => {
         const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
+        this.currentSong = zzfxP(...SongLibrary.death);
+
         const goodbye = this.world
           .create()
           .add(
