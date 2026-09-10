@@ -2,6 +2,19 @@ import { Point, pt } from "./Point";
 
 export const DEG2RAD = Math.PI / 180;
 export const RAD2DEG = 180 / Math.PI;
+export const { PI, sin, cos } = Math;
+
+export const easeInBack = (x: number): number => {
+  const c1 = 1.70158;
+  const c3 = c1 + 1;
+
+  return c3 * x * x * x - c1 * x * x;
+};
+export const easeIn = (t: number) => Math.cos(t * Math.PI * 0.5 + Math.PI) + 1;
+export const easeOut = (t: number) => Math.sin(t * Math.PI * 0.5);
+
+export const bounce = (t: number, period = 10, height = 5) =>
+  Math.abs(Math.sin(t * period * Math.PI)) * height;
 
 export function pickRandom(options: any[]): any {
   return options[Math.floor(Math.random() * options.length)];

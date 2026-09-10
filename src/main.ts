@@ -31,7 +31,7 @@ import {
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
-import { lerp } from "./utils/MathUtils";
+import { bounce, lerp } from "./utils/MathUtils";
 import { Point, pt } from "./utils/Point";
 import { initGradients } from "./utils/SpriteUtils";
 import {
@@ -92,8 +92,6 @@ function init() {
   );
 
   // Unicorn animation
-  const bounce = (t) => Math.abs(Math.sin(t * 10 * Math.PI)) * 5;
-
   const { position }: DynamicBody = unicorn.get(DynamicBody);
   let startPos = position.clone();
 

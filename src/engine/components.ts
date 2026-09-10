@@ -6,16 +6,30 @@ import {
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
-import { lerp, lerp2 } from "../utils/MathUtils";
+import {
+  bounce,
+  easeIn,
+  easeInBack,
+  easeOut,
+  lerp,
+  lerp2,
+  PI,
+  sway,
+} from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { Interval, Transform, type timestamp } from "../utils/TimeUtils";
+import {
+  Interval,
+  Transform,
+  type timestamp,
+  type Transformer,
+} from "../utils/TimeUtils";
 import { DynamicBody } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
 
 export const GAME_TITLE = "Slingshot Siege";
-export const RAINBOW_PERIOD = 10;
+export const RAINBOW_INTERVAL = 10;
 export const START_LIVES = 3;
 
 export class Health {
@@ -284,15 +298,56 @@ export class Spawner {
       );
 
     this.powerupInterval = world.create().add(
-      Interval(RAINBOW_PERIOD, () => {
+      Interval(30, () => {
         const dice = Math.random() < 0.5;
-        world.create().add(
-          new Rainbow(),
-          new DynamicBody(pt(dice ? 0 : Stage.cw, 100), {
-            startVelocity: pt(50, 0).scale(dice ? 1 : -1),
-          }),
-          new Sprite(drawRainbow),
-        );
+        const startY = 120;
+        const startX = dice ? -100 : Stage.cw + 100;
+        const swayStartX = dice ? 100 : Stage.cw - 100;
+        const swayEndX = dice ? Stage.cw - 100 : 100;
+        const exitX = lerp(Stage.cw * 0.3, Stage.cw * 0.8, Math.random());
+
+        const rainbow = world
+          .create()
+          .add(
+            new Rainbow(),
+            new DynamicBody(pt(startX, startY)),
+            new Sprite(drawRainbow),
+          );
+
+        const { position }: DynamicBody = rainbow.get(DynamicBody);
+
+        const iterations = 5; // must be odd
+        const enterTransform: Transformer = {
+          duration: 1,
+          update(e, t) {
+            position.set(lerp(startX, swayStartX, easeOut(t)), startY);
+          },
+        };
+        const swayTransform: Transformer = {
+          duration: 10,
+          update(e, t) {
+            position.set(
+              lerp(swayStartX, swayEndX, sway(t, iterations)),
+              startY - bounce(t, iterations, 50),
+            );
+          },
+        };
+        const exitTransform: Transformer = {
+          duration: 1,
+          update(e, t) {
+            position.set(
+              lerp(swayEndX, exitX, easeIn(t)),
+              lerp(startY, -100, easeInBack(t)),
+            );
+          },
+          end(e) {
+            e.delete();
+          },
+        };
+
+        enterTransform.next = swayTransform;
+        swayTransform.next = exitTransform;
+        rainbow.add(new Transform(enterTransform));
       }),
     );
   }
