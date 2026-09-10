@@ -25,7 +25,7 @@ export function drawText(
   // circle(position);
   const { x, y } = new Point(
     position.x - metrics.width * center - margin,
-    position.y + metrics.emHeightAscent * center + margin,
+    position.y + metrics.actualBoundingBoxAscent * center + margin,
   );
   ctx.fillStyle = fill;
   ctx.strokeStyle = stroke;
