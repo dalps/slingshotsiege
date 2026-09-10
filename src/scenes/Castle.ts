@@ -1,9 +1,10 @@
 import { rgb } from "../engine/color";
 import { LayerName, Stage } from "../engine/Stage";
+import { tower } from "../entities/sprites";
 import { makeGradient } from "../utils/CanvasUtils";
 import { distribute } from "../utils/MathUtils";
-import { pt } from "../utils/Point";
-import { WHITE } from "../utils/SpriteUtils";
+import { Point, pt } from "../utils/Point";
+import { drawParts, WHITE } from "../utils/SpriteUtils";
 
 export let skyGradient: CanvasGradient;
 
@@ -28,22 +29,54 @@ function draw() {
   ctx.fillStyle = skyGradient;
   ctx.fillRect(0, 0, cw, grassStart * ch);
 
+  const sunRadius = 110;
+  const sunPos = pt(130);
+  const sunGradient = makeGradient(
+    sunPos,
+    sunPos,
+    [WHITE.toAlpha(0.8), WHITE.toAlpha(0)],
+    [20, sunRadius],
+  );
+
+  ctx.fillStyle = sunGradient;
+  ctx.beginPath();
+  ctx.arc(sunPos.x, sunPos.y, sunRadius, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.fill();
+
+  {
+    ctx.translate(cw * 0.9, ch * 0.6);
+    drawParts(ctx, tower);
+    ctx.resetTransform()
+    ctx.translate(cw * 0.1, ch * 0.65);
+    ctx.scale(-1.2, 0.8)
+    drawParts(ctx, tower);
+    ctx.resetTransform()
+  }
+
   {
     // white brick wall
     const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.BG_3);
-    ctx.fillStyle = "#e8e8e8";
+    const brickPattern = ctx.createPattern(
+      drawBrickPattern(brickSize),
+      "repeat",
+    )!;
+    const mat = new DOMMatrix().translate(0, ch * wallStart);
+    brickPattern.setTransform(mat);
+    ctx.fillStyle = brickPattern;
     ctx.fillRect(0, ch * wallStart, cw, ch * (grassStart - wallStart));
 
     const nBricks = Math.floor(cw / brickSize.x);
     const offset = (cw - brickSize.x * nBricks) / 2;
 
+    brickPattern.setTransform(mat.translate(brickSize.x - 12, 0));
     distribute(0, cw, nBricks, (n, i) => {
       if (i % 2 === 0) {
         ctx.fillRect(
           i * brickSize.x + offset,
-          ch * wallStart - brickSize.y + 5,
+          ch * wallStart - brickSize.y,
           brickSize.x,
-          brickSize.y,
+          brickSize.y + 1,
         );
       }
     });
@@ -59,3 +92,37 @@ function draw() {
 }
 
 export const Castle = { draw };
+
+export function drawBrickPattern(
+  brickSize: Point,
+  nx = 2,
+  ny = 2,
+): CanvasImageSource {
+  const layer = Stage.newOffscreenLayer(
+    "b",
+    brickSize.x * nx,
+    brickSize.y * ny,
+  );
+  const { ctx } = layer;
+
+  const grays = ["#ccc", "#ddd"];
+  const mortar = "#f7f7f7";
+
+  const drawRow = (dx, dy) => {
+    for (let i = 0; i <= nx; i++) {
+      ctx.fillStyle = grays[i % 2];
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = mortar;
+      const args = [dx + brickSize.x * i, dy, brickSize.x, brickSize.y];
+      ctx.fillRect(...args);
+      ctx.strokeRect(...args);
+    }
+  };
+
+  drawRow(-10, 0);
+  drawRow(-20, brickSize.y);
+
+  // Stage.debugOffscreenLayer("b")
+
+  return layer.canvas;
+}

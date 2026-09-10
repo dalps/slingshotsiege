@@ -10,7 +10,7 @@ export type DrawingPart = [Path2D, color, color];
 
 export type Drawing = DrawingPart[];
 
-export const WHITE = "#fff";
+export const WHITE = rgb(255, 255, 255);
 export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
 export const VIOLET = rgb(94, 50, 147);

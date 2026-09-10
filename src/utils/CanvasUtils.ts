@@ -22,7 +22,6 @@ export function drawText(
   const metrics = ctx.measureText(text);
   const margin = 10;
   const center = centered ? 0.5 : 1;
-  // circle(position);
   const { x, y } = new Point(
     position.x - metrics.width * center - margin,
     position.y + metrics.actualBoundingBoxAscent * center + margin,
@@ -81,44 +80,14 @@ export function makeGradient(
   cp1: Point,
   cp2: Point,
   colors: (HSLColor | string)[],
+  radii: [number, number] | null = null,
 ) {
   const { ctx } = Stage;
-  const g = ctx.createLinearGradient(cp1.x, cp1.y, cp2.x, cp2.y);
+  const g = radii
+    ? ctx.createRadialGradient(cp1.x, cp1.y, radii[0], cp2.x, cp2.y, radii[1])
+    : ctx.createLinearGradient(cp1.x, cp1.y, cp2.x, cp2.y);
 
   colors.forEach((c, idx) => g.addColorStop(idx / (colors.length - 1), c));
-
-  return g;
-}
-
-export function makeGradientWithShine(
-  cp1: Point,
-  cp2: Point,
-  {
-    color1 = hsl(120, 100, 50), // hsla(120, 100%, 50%, 1.00),
-    color2 = hsl(120, 100, 31), // hsla(120, 100%, 31%, 1.00)
-    shineColor = hsl(120, 100, 88), // hsla(120, 100%, 88%, 1.00),
-    shinePos = 0.1,
-    shineSize = 0,
-    shineSmoothness = 0.5,
-  } = {},
-) {
-  const { ctx } = Stage;
-  const g = ctx.createLinearGradient(cp1.x, cp1.y, cp2.x, cp2.y);
-
-  g.addColorStop(0, color1);
-  if (shineSize > 0) {
-    g.addColorStop(shinePos, color1);
-    g.addColorStop(
-      shinePos + lerp(0, shineSize * 0.5, shineSmoothness),
-      shineColor,
-    );
-    g.addColorStop(
-      shinePos + shineSize - lerp(0, shineSize * 0.5, shineSmoothness),
-      shineColor,
-    );
-    g.addColorStop(shinePos + shineSize, color1);
-  }
-  g.addColorStop(1, color2);
 
   return g;
 }

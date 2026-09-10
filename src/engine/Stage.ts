@@ -111,6 +111,7 @@ export class Stage {
   static newOffscreenLayer(name: string, width: number, height: number) {
     const newLayer = new CanvasHelper(name, width, height);
     this._layers.set(name, newLayer);
+    return newLayer;
   }
 
   static fitLayersToStage() {

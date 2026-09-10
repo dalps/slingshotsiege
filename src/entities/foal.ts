@@ -2,6 +2,7 @@ import type { Entity } from "../ecs";
 import { Health, Prey, START_LIVES } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
+import { makeGradient } from "../utils/CanvasUtils";
 import { distribute } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, drawParts } from "../utils/SpriteUtils";
@@ -11,15 +12,15 @@ export function drawFoal(e: Entity) {
   const size = pt(50);
   const { ctx } = Stage.setActiveLayer(LayerName.Game);
 
-  const [preyData, health, foalBody]: [Prey, Health, DynamicBody] = e.get(
-    Prey,
-    Health,
-    DynamicBody,
-  );
+  const [health, foalBody]: [Health, DynamicBody] = e.get(Health, DynamicBody);
   const { position } = foalBody;
   const spritePos = position;
 
   ctx.translate(spritePos.x, spritePos.y);
+
+  // shadow
+  foalGroove(ctx, e);
+
   drawParts(ctx, foal);
 
   function heart(position: Point) {
@@ -52,4 +53,23 @@ export function drawFoal(e: Entity) {
     );
 
   ctx.resetTransform();
+}
+
+export function foalGroove(ctx: CanvasRenderingContext2D) {
+  const radii: [number, number] = [181, 175];
+  const shadow = makeGradient(
+    pt(0, 20),
+    pt(0, 20),
+    [BLACK.toAlpha(0), BLACK.toAlpha(0.3)],
+    [60, 15],
+  );
+
+  ctx.fillStyle = shadow;
+  ctx.beginPath();
+  ctx.ellipse(0, 0, ...radii, 0, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.save();
+  ctx.scale(1, 0.5);
+  ctx.fill();
+  ctx.restore();
 }
