@@ -14,8 +14,7 @@ export function drawUnicorn(e: Entity) {
 
   const size = pt(200);
   ctx.translate(p.x, p.y);
-  // const scale = 2;
-  // ctx.scale(scale, scale);
+  !unicornData.facingEast && ctx.transform(-1, 0, 0, 1, 0, 0);
   ctx.translate(-size.x * 0.5, -size.y);
 
   drawParts(ctx, adult);

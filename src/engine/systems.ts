@@ -2,9 +2,9 @@ import { World, type Entity, type Query } from "../ecs";
 import { drawFoal } from "../entities/foal";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
-import { damp2I, distribute, lerp, RAD2DEG } from "../utils/MathUtils";
+import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { Timeout, Transform, type Transformer } from "../utils/TimeUtils";
+import { Timeout, Transform } from "../utils/TimeUtils";
 import { rgba } from "./color";
 import {
   DragInput,
@@ -20,10 +20,9 @@ import {
   Spawner,
   Sprite,
   Unicorn,
-  UNICORN_EYES,
   UnicornEmotion,
   Weapon,
-  WeaponState,
+  WeaponState
 } from "./components";
 import { bloodParticles, deathParticles, waterParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
@@ -127,10 +126,7 @@ export class DamageSystem {
 
           this.unicorn.iterate(
             (e, unicornData: Unicorn, unicornBody: DynamicBody) => {
-              waterParticles(
-                this.world,
-                unicornBody.position.add(UNICORN_EYES),
-              );
+              waterParticles(this.world, unicornBody, unicornData);
 
               unicornData.expression = UnicornEmotion.Anguished;
               this.world.query(Prey).length > 0 &&
@@ -147,24 +143,14 @@ export class DamageSystem {
 
 export class RainbowMovement {
   rainbows: Query;
-  world: World;
 
   constructor(world: World) {
-    this.world = world;
-    this.rainbows = world.query(Rainbow, DynamicBody);
+    this.rainbows = world.query(Sprite, Rainbow, DynamicBody);
   }
 
   update(dt: number) {
-    this.rainbows.iterate((r, rainbow: Rainbow, rainbowBody: DynamicBody) => {
-      rainbow.angle += dt * 0.1;
-      const { ctx, cw, ch } = Stage;
-
-      const transform: Transformer = {
-        duration: 3,
-        update(e, stage) {
-          rainbowBody.position.set(lerp(0, cw, stage), 100);
-        },
-      };
+    this.rainbows.iterate((r, rainbowSprite: Sprite) => {
+      rainbowSprite.angle += dt * 0.1;
     });
   }
 }
@@ -444,7 +430,8 @@ export class GameCycle {
 
         this.tearEmitter = waterParticles(
           this.world,
-          unicornBody.position.add(UNICORN_EYES),
+          unicornBody,
+          unicornData,
           Infinity,
         );
       },

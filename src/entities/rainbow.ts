@@ -1,5 +1,5 @@
 import type { Entity } from "../ecs";
-import { Rainbow } from "../engine/components";
+import { Rainbow, Sprite } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { makeGradient } from "../utils/CanvasUtils";
@@ -11,12 +11,10 @@ export const RAINBOW_INNER_RADIUS = 40;
 export const RAINBOW_OUTER_RADIUS = 50;
 
 export function drawRainbow(e: Entity) {
-  const [rainbow, rainbowBody]: [Rainbow, DynamicBody] = e.get(
-    Rainbow,
-    DynamicBody,
-  );
+  const [{ angle }, rainbowData, rainbowBody]: [Sprite, Rainbow, DynamicBody] =
+    e.get(Sprite, Rainbow, DynamicBody);
   const { position: center } = rainbowBody;
-  const { innerRadius, outerRadius, angle } = rainbow;
+  const { innerRadius, outerRadius } = rainbowData;
 
   // Rounded star
   const points = 8;

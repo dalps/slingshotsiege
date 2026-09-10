@@ -27,12 +27,16 @@ export const Timeout = (
   e: Entity,
   duration: seconds,
   end: Transformer["end"],
-) => e.add(new Transform({ duration, end }));
+) => e.add(new Transform({ duration, end })); // Warning: this replaces other running animations on the same entity. For long-running animations, supply a dedicated entity.
 
-export const Interval = (duration: seconds, end: Transformer["end"]) => {
+export const Interval = (
+  e: Entity,
+  duration: seconds,
+  end: Transformer["end"],
+) => {
   const t = new Transform({ duration, end });
   t.transformer.next = t.transformer;
-  return t;
+  return e.add(t);
 };
 
 export const Loop = (duration: seconds, iterations: number, update, end) => {

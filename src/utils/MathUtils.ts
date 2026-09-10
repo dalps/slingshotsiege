@@ -13,6 +13,9 @@ export const easeInBack = (x: number): number => {
 export const easeIn = (t: number) => Math.cos(t * Math.PI * 0.5 + Math.PI) + 1;
 export const easeOut = (t: number) => Math.sin(t * Math.PI * 0.5);
 
+export const sway = (t: number, iterations = 5) =>
+  Math.cos(t * iterations * PI - PI) * 0.5 + 0.5;
+
 export const bounce = (t: number, period = 10, height = 5) =>
   Math.abs(Math.sin(t * period * Math.PI)) * height;
 

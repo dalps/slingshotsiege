@@ -2,7 +2,9 @@ import type { Entity, World } from "../ecs";
 import { DragInput, Sprite, Weapon, WeaponState } from "../engine/components";
 import { ElasticLine } from "../engine/ElasticLine";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
+import { sfx } from "../engine/sfx";
 import { LayerName, Stage } from "../engine/Stage";
+import { zzfxP } from "../engine/zzfx";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { WHITE } from "../utils/SpriteUtils";
@@ -125,6 +127,8 @@ export class SlingshotFrame {
     weaponBody.clearForces();
     weaponBody.addForce(GRAVITY);
     weaponData.state = WeaponState.Fired;
+
+    zzfxP(sfx.shoot2);
 
     this.weapon = null;
   }

@@ -24,6 +24,7 @@ import {
   type Transformer,
 } from "../utils/TimeUtils";
 import { DynamicBody } from "./Physics2D";
+import { sfx, zzfxP } from "./sfx";
 import { LayerName, Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
@@ -73,6 +74,7 @@ export class Weapon {
 export class Sprite {
   transparency = 1;
   scale = 1;
+  angle = 0;
 
   constructor(public draw: DrawFn) {}
 }
@@ -190,6 +192,11 @@ export class Unicorn {
   horn: Entity | null = null;
   hornProgress = 0;
   hornOrigin = pt(60, -178);
+  facingEast = true;
+
+  flip() {
+    this.facingEast = !this.facingEast;
+  }
 
   getPissed() {
     this.expression = UnicornEmotion.Furious;
@@ -283,73 +290,74 @@ export class Spawner {
   powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.enemyInterval = world
-      .create()
-      .add(
-        Interval(1, () =>
-          world
-            .create()
-            .add(
-              new Hunter(),
-              new DynamicBody(pt(Math.random() * Stage.cw, 0)),
-              new Sprite(drawEnemy),
-            ),
+    this.enemyInterval = Interval(world.create(), 1, () =>
+      world
+        .create()
+        .add(
+          new Hunter(),
+          new DynamicBody(pt(Math.random() * Stage.cw, 0)),
+          new Sprite(drawEnemy),
         ),
-      );
-
-    this.powerupInterval = world.create().add(
-      Interval(30, () => {
-        const dice = Math.random() < 0.5;
-        const startY = 120;
-        const startX = dice ? -100 : Stage.cw + 100;
-        const swayStartX = dice ? 100 : Stage.cw - 100;
-        const swayEndX = dice ? Stage.cw - 100 : 100;
-        const exitX = lerp(Stage.cw * 0.3, Stage.cw * 0.8, Math.random());
-
-        const rainbow = world
-          .create()
-          .add(
-            new Rainbow(),
-            new DynamicBody(pt(startX, startY)),
-            new Sprite(drawRainbow),
-          );
-
-        const { position }: DynamicBody = rainbow.get(DynamicBody);
-
-        const iterations = 5; // must be odd
-        const enterTransform: Transformer = {
-          duration: 1,
-          update(e, t) {
-            position.set(lerp(startX, swayStartX, easeOut(t)), startY);
-          },
-        };
-        const swayTransform: Transformer = {
-          duration: 10,
-          update(e, t) {
-            position.set(
-              lerp(swayStartX, swayEndX, sway(t, iterations)),
-              startY - bounce(t, iterations, 50),
-            );
-          },
-        };
-        const exitTransform: Transformer = {
-          duration: 1,
-          update(e, t) {
-            position.set(
-              lerp(swayEndX, exitX, easeIn(t)),
-              lerp(startY, -100, easeInBack(t)),
-            );
-          },
-          end(e) {
-            e.delete();
-          },
-        };
-
-        enterTransform.next = swayTransform;
-        swayTransform.next = exitTransform;
-        rainbow.add(new Transform(enterTransform));
-      }),
     );
+
+    this.powerupInterval = Interval(world.create(), 10, () => {
+      const dice = Math.random() < 0.5;
+      const startY = 120;
+      const startX = dice ? -100 : Stage.cw + 100;
+      const swayStartX = dice ? 100 : Stage.cw - 100;
+      const swayEndX = dice ? Stage.cw - 100 : 100;
+      const exitX = lerp(Stage.cw * 0.3, Stage.cw * 0.8, Math.random());
+
+      const rainbow = world
+        .create()
+        .add(
+          new Rainbow(),
+          new DynamicBody(pt(startX, startY)),
+          new Sprite(drawRainbow),
+        );
+
+      const { position }: DynamicBody = rainbow.get(DynamicBody);
+
+      const iterations = 3; // must be odd
+      const enterTransform: Transformer = {
+        duration: 1,
+        update(e, t) {
+          position.set(lerp(startX, swayStartX, easeOut(t)), startY);
+        },
+        end(e) {
+          if (!Rainbow.soundEmitter?.exists)
+            Rainbow.soundEmitter = Interval(world.create(), 1 / 3, () =>
+              zzfxP(sfx.rainbow2),
+            );
+        },
+      };
+      const swayTransform: Transformer = {
+        duration: 10,
+        update(e, t) {
+          position.set(
+            lerp(swayStartX, swayEndX, sway(t, iterations)),
+            startY - bounce(t, iterations, 50),
+          );
+        },
+      };
+      const exitTransform: Transformer = {
+        duration: 1,
+        update(e, t) {
+          position.set(
+            lerp(swayEndX, exitX, easeIn(t)),
+            lerp(startY, -100, easeInBack(t)),
+          );
+        },
+        end(e) {
+          e.delete();
+          Rainbow.soundEmitter?.delete();
+        },
+      };
+
+      enterTransform.next = swayTransform;
+      swayTransform.next = exitTransform;
+      rainbow.add(new Transform(enterTransform));
+    });
   }
 
   destructor() {
@@ -362,11 +370,14 @@ export class Rainbow {
   innerRadius = RAINBOW_INNER_RADIUS;
   outerRadius = RAINBOW_OUTER_RADIUS;
   radius = 40;
-  angle = 0;
-  gradientAngle = 0;
   particleEmitter: Entity;
+  static soundEmitter: Entity;
 
   constructor(world: World) {
     // this.particleEmitter = world.create().add(new Interval(1 / 8, () => world.create().add(new Sprite(dra))));
+  }
+
+  destructor() {
+    Rainbow.soundEmitter?.exists?.delete();
   }
 }

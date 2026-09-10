@@ -2,8 +2,8 @@ import type { Entity, World } from "../ecs";
 import { DEG2RAD, lerp } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { Interval, Transform } from "../utils/TimeUtils";
-import { rgba } from "./color";
-import { Sprite } from "./components";
+import { rgb, rgba } from "./color";
+import { Sprite, Unicorn, UNICORN_EYES } from "./components";
 import { DynamicBody, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
@@ -64,43 +64,49 @@ export function bloodParticles(world: World, position: Point) {
   }
 }
 
-export function waterParticles(world: World, position: Point, n = 8) {
-  const color = rgba(225, 243, 255, 1);
+export function waterParticles(
+  world: World,
+  unicornBody: DynamicBody,
+  unicornData: Unicorn,
+  n = 8,
+) {
+  const color = rgb(225, 243, 255);
 
-  const emitter = world.create().add(
-    Interval(1 / 8, () => {
-      const angle = lerp(90 * DEG2RAD, 210 * DEG2RAD, Math.random());
-      const startVelocity = pt(0, 1)
-        .rotate(angle)
-        .scale(lerp(10, 30, Math.random()));
+  const emitter = Interval(world.create(), 1 / 8, () => {
+    const angle = lerp(90 * DEG2RAD, 210 * DEG2RAD, Math.random());
+    const startVelocity = pt(0, 1)
+      .rotate(angle)
+      .scale(lerp(10, 30, Math.random()));
 
-      const body = new DynamicBody(position.clone(), {
-        startVelocity,
-      });
-      body.addForce(GRAVITY);
+    const position = unicornBody.position.add(
+      unicornData.facingEast ? UNICORN_EYES : UNICORN_EYES.flip(),
+    );
 
-      const radius = lerp(5, 8, Math.random());
+    const body = new DynamicBody(position.clone(), {
+      startVelocity,
+    });
+    body.addForce(GRAVITY);
 
-      world.create().add(
-        body,
-        new Transform({
-          duration: 0.5,
-          end(e) {
-            e.delete();
-          },
-          update(e, t) {
-            const sprite: Sprite = e.get(Sprite);
-            sprite.transparency = 1 - t;
-            sprite.scale *= t;
-          },
-        }),
-        new Sprite((e) => drawCircle(e, radius, color)),
-      );
+    const radius = lerp(5, 8, Math.random());
 
-      if (n-- <= 0) emitter.delete();
-    }),
-  );
+    world.create().add(
+      body,
+      new Transform({
+        duration: 0.5,
+        end(e) {
+          e.delete();
+        },
+        update(e, t) {
+          const sprite: Sprite = e.get(Sprite);
+          sprite.transparency = 1 - t;
+          sprite.scale *= t;
+        },
+      }),
+      new Sprite((e) => drawCircle(e, radius, color)),
+    );
 
+    if (n-- <= 0) emitter.delete();
+  });
   return emitter;
 }
 

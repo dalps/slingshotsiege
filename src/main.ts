@@ -32,7 +32,7 @@ import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
 import { Castle } from "./scenes/Castle";
 import { bounce, lerp } from "./utils/MathUtils";
-import { Point, pt } from "./utils/Point";
+import { pt } from "./utils/Point";
 import { initGradients } from "./utils/SpriteUtils";
 import {
   TIME_SCALE,
@@ -83,16 +83,19 @@ function init() {
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
 
   const startPosition = pt(200, ch * 0.7);
-  const unicorn = world.create().add(
-    new DynamicBody(startPosition.clone(), {
-      // startVelocity: pt(2, 0),
-    }),
-    new Unicorn(),
-    new Sprite(drawUnicorn),
-  );
+  const unicornData = new Unicorn();
+  const unicorn = world
+    .create()
+    .add(
+      new DynamicBody(startPosition.clone()),
+      unicornData,
+      new Sprite(drawUnicorn),
+    );
 
   // Unicorn animation
-  const { position }: DynamicBody = unicorn.get(DynamicBody);
+  const unicornBody: DynamicBody = unicorn.get(DynamicBody);
+  const { position } = unicornBody;
+
   let startPos = position.clone();
 
   const hopToXAndRest = (
@@ -109,7 +112,7 @@ function init() {
         duration: rest,
         end(e) {
           startPos.copy(position);
-          // todo: flip sprite
+          unicornData.flip();
         },
       },
     };
@@ -121,7 +124,7 @@ function init() {
   p1.next!.next = p2;
   p2.next!.next = p1;
 
-  unicorn.add(new Transform(p1));
+  world.create().add(new Transform(p1));
 
   const game = world.create().add(new Game());
 

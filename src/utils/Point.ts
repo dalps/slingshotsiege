@@ -147,6 +147,10 @@ export class Point {
     return Math.atan2(this.x, -this.y);
   }
 
+  flip() {
+    return pt(-this.x, this.y);
+  }
+
   toString() {
     return `(${this.x},${this.y})`;
   }
