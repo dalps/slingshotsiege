@@ -20,6 +20,8 @@ export function generateSprites() {
 ];\n`;
     o += getParts("life");
     o += getParts("rainbowFace");
+    o += getParts("bricks");
+    o += getParts("tower");
 
     o = o.replaceAll(`rgb(0, 0, 0)`, "BLACK");
 
@@ -52,7 +54,10 @@ export function parsePaths(groupLabel: string): Record<string, DrawingPart> {
       if (!key || !pathData || p.style.display === "none") return;
 
       const { stroke, fill } = p.style;
-      const path = pathData; // .replaceAll(/(\w+)\s*(\w+)\s*/g, "$1 $2 ");
+      const path = pathData
+        .replaceAll(/(\D)\s+(\D)/gi, "$1$2") // z m ---> zm
+        .replaceAll(/(\D)\s+(\d)/gi, "$1$2") // m 42 ---> m42
+        .replaceAll(/(.)\s+(\D)/gi, "$1$2"); // 3 -3 ---> 3-3
 
       obj[key] = { path, fill: replaceUrl(fill), stroke: replaceUrl(stroke) };
 
