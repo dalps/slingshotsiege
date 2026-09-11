@@ -1,5 +1,5 @@
 import { World, type Entity, type Query } from "../ecs";
-import { drawFoal } from "../entities/foal";
+import { drawFoal, drawShadow } from "../entities/foal";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { drawText } from "../utils/CanvasUtils";
 import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
@@ -131,7 +131,7 @@ export class DamageSystem {
 
               unicornData.expression = UnicornEmotion.Anguished;
               this.world.query(Prey).length > 0 &&
-                Timeout(e, 1, () => {
+                Timeout(this.world, 1, () => {
                   unicornData.expression = UnicornEmotion.Furious;
                 });
             },
@@ -189,8 +189,10 @@ export class RainbowSystem {
 
         this.world.query(Unicorn).iterate((e, unicorn: Unicorn) => {
           ((unicorn.expression = UnicornEmotion.Content),
-            Timeout(this.world.create(), 4, () => unicorn.getPissed()));
+            Timeout(this.world, 4, () => unicorn.getPissed()));
         });
+
+        // todo: pause slingshot reload too
 
         // Pause spawners
         this.spawners.iterate((e) => e.delete());
@@ -202,7 +204,7 @@ export class RainbowSystem {
           h.add(new Frozen());
         });
 
-        Timeout(this.world.create(), 2, () => {
+        Timeout(this.world, 2, () => {
           // Kill all foes after a short timeout
           zzfxP(sfx.explosion);
 
@@ -222,7 +224,7 @@ export class RainbowSystem {
             });
 
           // Restart spawners
-          Timeout(this.world.create(), 1, () =>
+          Timeout(this.world, 1, () =>
             this.world.create().add(new Spawner(this.world)),
           );
         });
@@ -436,7 +438,7 @@ export class GameCycle {
       },
     );
 
-    Timeout(this.world.create(), 2, () => {
+    Timeout(this.world, 2, () => {
       const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
       this.currentSong = zzfxP(...SongLibrary.death);
@@ -459,7 +461,7 @@ export class GameCycle {
         }),
       );
 
-      Timeout(this.world.create(), 2, () => {
+      Timeout(this.world, 2, () => {
         const retry = this.world.create().add(
           new Sprite(() =>
             drawText("Tap to retry", pt(cw * 0.5, ch * 0.7), {
@@ -555,34 +557,43 @@ export class GameCycle {
 export class ReloadSystem {
   slingshot: Query;
   unicorn: Query;
+  game: Query;
 
   constructor(public world: World) {
     this.slingshot = world.query(SlingshotFrame); // singleton
     this.unicorn = world.query(Unicorn);
+    this.game = world.query(Game);
   }
 
-  update(dt) {
-    this.slingshot.iterate(
-      (s, slingshot: SlingshotFrame) =>
-        // Check that slingshot input is enabled
-        slingshot.handle.get(DragInput) &&
-        this.unicorn.iterate((u, unicorn: Unicorn) => {
-          if (!unicorn.horn && !slingshot.weapon) {
-            unicorn.passHornToSlingshot(this.world, u, s);
-          }
-        }),
+  update() {
+    const [_, { state }]: [Entity, Game] = this.game.first()!;
+
+    this.slingshot.iterate((s, slingshot: SlingshotFrame) =>
+      this.unicorn.iterate((u, unicorn: Unicorn) => {
+        if (state === GameState.Ongoing && !unicorn.horn && !slingshot.weapon) {
+          unicorn.passHornToSlingshot(this.world, u, s);
+        }
+      }),
     );
   }
 }
 
-export function spawnFoals(world: World) {
+export function getFoalPositions(): Point[] {
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
   const width = 0.9;
   const offset = cw * (1 - width);
 
-  return distribute(offset, cw * width, 4).map((x, idx) =>
-    world
-      .create()
-      .add(new Prey(), new DynamicBody(pt(x, ch * 0.85)), new Sprite(drawFoal)),
+  return distribute(offset, cw * width, 4).map((x) => pt(x, ch * 0.85));
+}
+
+export function spawnFoals(world: World) {
+  return getFoalPositions().map((x) =>
+    world.create().add(new Prey(), new DynamicBody(x), new Sprite(drawFoal)),
   );
 }
+
+// export function drawFoalShadows(foals: Entity[]) {
+//   foals.forEach(
+//     (e) => e.exists && drawShadow(e.get(DynamicBody).position.add(pt(0, 20))),
+//   );
+// }

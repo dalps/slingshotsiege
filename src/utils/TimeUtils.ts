@@ -23,29 +23,35 @@ export class Transform {
   }
 }
 
+/**
+ * Spawns a dummy entity that runs the `end` callback and deletes itself after `duration` seconds.
+ */
 export const Timeout = (
-  e: Entity,
+  world: World,
   duration: seconds,
-  end: Transformer["end"],
-) => e.add(new Transform({ duration, end })); // Warning: this replaces other running animations on the same entity. For long-running animations, supply a dedicated entity.
+  endFn: Transformer["end"],
+) =>
+  world.create().add(
+    new Transform({
+      duration,
+      end: (e) => {
+        e.delete();
+        endFn && endFn(e);
+      },
+    }),
+  );
 
+/**
+ * Spawns a dummy entity that runs the `end` callback perpetually every `duration` seconds.
+ */
 export const Interval = (
-  e: Entity,
+  world: World,
   duration: seconds,
   end: Transformer["end"],
 ) => {
   const t = new Transform({ duration, end });
   t.transformer.next = t.transformer;
-  return e.add(t);
-};
-
-export const Loop = (duration: seconds, iterations: number, update, end) => {
-  const t = new Transform({ duration, end });
-  const endFn = () => {
-    t.transformer.next = --iterations >= 0 ? t.transformer : undefined;
-    end();
-  };
-  t.transformer.end = endFn;
+  return world.create().add(t);
 };
 
 // From kutuluk/js13k-ecs

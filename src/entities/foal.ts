@@ -34,10 +34,7 @@ export function drawFoal(e: Entity) {
 
   const offset = 30;
   health &&
-    distribute(
-      position.x - offset,
-      position.x + offset,
-      START_LIVES,
+    distribute(position.x - offset, position.x + offset, START_LIVES).map(
       (x, idx) => {
         if (idx + 1 <= health.lives) {
           ctx.strokeStyle = BLACK;

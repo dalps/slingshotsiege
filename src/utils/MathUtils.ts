@@ -21,6 +21,8 @@ export const sway = (t: number, iterations = 5) =>
 export const bounce = (t: number, period = 10, height = 5) =>
   Math.abs(Math.sin(t * period * Math.PI)) * height;
 
+export const rand = (min: number, max: number) => lerp(min, max, Math.random());
+
 export function pickRandom(options: any[]): any {
   return options[Math.floor(Math.random() * options.length)];
 }
@@ -33,19 +35,13 @@ export function lerp(min: number, max: number, t: number) {
   return min * (1 - t) + max * t;
 }
 
-export function distribute(
-  min: number,
-  max: number,
-  subs: number,
-  cb: (n: number, i: number) => void = () => {},
-) {
+export function distribute(min: number, max: number, subs: number) {
   if (subs <= 1) return [lerp(min, max, 0.5)];
 
   const points: number[] = [];
   for (let i = 0; i < subs; i++) {
     const n = lerp(min, max, i / (subs - 1));
     points.push(n);
-    cb(n, i);
   }
   return points;
 }

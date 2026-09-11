@@ -1,7 +1,7 @@
 import type { Entity } from "../ecs";
 import { Hunter } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
-import { Stage } from "../engine/Stage";
+import { LayerName, Stage } from "../engine/Stage";
 import { circle } from "../utils/CanvasUtils";
 import { drawParts } from "../utils/SpriteUtils";
 import { bat } from "./sprites";

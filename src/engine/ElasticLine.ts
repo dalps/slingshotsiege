@@ -56,4 +56,8 @@ export class ElasticLine {
     this.joints.at(0)?.get(DynamicBody).toggleFixed();
     this.joints.at(-1)?.get(DynamicBody).toggleFixed();
   }
+
+  destructor() {
+    this.joints.forEach((j) => j.delete());
+  }
 }

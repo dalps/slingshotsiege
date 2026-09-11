@@ -10,10 +10,10 @@ import {
   bounce,
   easeIn,
   easeInBack,
-  easeInOut,
   easeOut,
   lerp,
   lerp2,
+  rand,
   sway,
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
@@ -51,10 +51,10 @@ export class Hunter {
   target: Entity | null = null;
   distance: number | null = null;
   speed: number = 20;
-  particeEmitter: Entity | null = null;
+  particleEmitter: Entity | null = null;
 
   destructor() {
-    this.particeEmitter?.delete();
+    this.particleEmitter?.delete();
   }
 }
 
@@ -204,17 +204,18 @@ export class Unicorn {
       }),
       new Sprite(drawWeapon),
     );
+
     this.horn = fakeWeapon;
 
-    slingshotData.weapon = fakeWeapon;
-    const weaponBody: DynamicBody = fakeWeapon.get(DynamicBody);
+    // slingshotData.weapon = fakeWeapon;
+    const fakeWeaponBody: DynamicBody = fakeWeapon.get(DynamicBody);
     fakeWeapon.add(
       new Transform({
         duration: 0.7,
         update: (e, t) => {
           const sprite: Sprite = e.get(Sprite);
           sprite.scale = lerp(0.3, 0.7, t);
-          weaponBody.position = lerp2(startPos, destPos, t, {
+          fakeWeaponBody.position = lerp2(startPos, destPos, t, {
             easeY: easeInBack,
           });
         },
@@ -247,18 +248,18 @@ export class Spawner {
   powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.enemyInterval = Interval(world.create(), 1, () => {
+    this.enemyInterval = Interval(world, 1, () => {
       const hunterData = new Hunter();
       const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0));
 
       world.create().add(hunterData, hunterBody, new Sprite(drawEnemy));
 
-      hunterData.particeEmitter = Interval(world.create(), 1 / 5, () => {
-        const size = lerp(20, 30, Math.random());
+      hunterData.particleEmitter = Interval(world, 1 / 5, () => {
+        const size = rand(20, 30);
 
         world.create().add(
           new DynamicBody(hunterBody.position.add(Point.random(pt(), pt(20))), {
-            // startVelocity: pt(lerp(10, 20, Math.random()), 0).rotate(Math.random() * Math.PI * 2),
+            // startVelocity: pt(rand(10, 20), 0).rotate(Math.random() * Math.PI * 2),
           }),
           FadeTransform(2),
           new Sprite((e) => {
@@ -279,13 +280,13 @@ export class Spawner {
       });
     });
 
-    this.powerupInterval = Interval(world.create(), 30, () => {
+    this.powerupInterval = Interval(world, 30, () => {
       const dice = Math.random() < 0.5;
       const startY = 120;
       const startX = dice ? -100 : Stage.cw + 100;
       const swayStartX = dice ? 100 : Stage.cw - 100;
       const swayEndX = dice ? Stage.cw - 100 : 100;
-      const exitX = lerp(Stage.cw * 0.3, Stage.cw * 0.8, Math.random());
+      const exitX = rand(Stage.cw * 0.3, Stage.cw * 0.8);
 
       const rainbowData = new Rainbow();
       const rainbow = world
@@ -306,11 +307,11 @@ export class Spawner {
         },
         end(e) {
           if (!Rainbow.soundEmitter?.exists)
-            Rainbow.soundEmitter = Interval(world.create(), 1 / 3, () =>
+            Rainbow.soundEmitter = Interval(world, 1 / 3, () =>
               zzfxP(sfx.rainbow2),
             );
 
-          rainbowData.particleEmitter = Interval(world.create(), 1 / 60, () => {
+          rainbowData.particleEmitter = Interval(world, 1 / 60, () => {
             PASTEL_RAINBOW.forEach((color, idx) => {
               world.create().add(
                 new DynamicBody(position.add(Point.random(pt(), pt(2))), {

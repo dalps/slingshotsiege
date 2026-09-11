@@ -47,11 +47,11 @@ function draw() {
   {
     ctx.translate(cw * 0.9, ch * 0.6);
     drawParts(ctx, tower);
-    ctx.resetTransform()
+    ctx.resetTransform();
     ctx.translate(cw * 0.1, ch * 0.65);
-    ctx.scale(-1.2, 0.8)
+    ctx.scale(-1.2, 0.8);
     drawParts(ctx, tower);
-    ctx.resetTransform()
+    ctx.resetTransform();
   }
 
   {
@@ -70,7 +70,7 @@ function draw() {
     const offset = (cw - brickSize.x * nBricks) / 2;
 
     brickPattern.setTransform(mat.translate(brickSize.x - 12, 0));
-    distribute(0, cw, nBricks, (n, i) => {
+    distribute(0, cw, nBricks).map((n, i) => {
       if (i % 2 === 0) {
         ctx.fillRect(
           i * brickSize.x + offset,

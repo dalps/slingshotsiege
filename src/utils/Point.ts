@@ -10,10 +10,7 @@ export class Point {
   }
 
   static random(min = pt(0, 0), max = pt(1, 1)) {
-    return new Point(
-      M.lerp(min.x, max.x, Math.random()),
-      M.lerp(min.y, max.y, Math.random()),
-    );
+    return new Point(M.rand(min.x, max.x), M.rand(min.y, max.y));
   }
 
   set(x: number, y: number) {

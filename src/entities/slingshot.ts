@@ -18,11 +18,10 @@ const armLength = 80;
 
 // Make it into a system which queries DragInput
 export class SlingshotFrame {
-  handle: Entity;
-  rope: Entity;
+  handle: Entity | null = null;
+  cord: Entity | null = null;
   weapon: Entity | null = null;
   playing = false;
-  reload: Function;
 
   anchorLeft: Point;
   anchorRight: Point;
@@ -31,6 +30,30 @@ export class SlingshotFrame {
   grabPos: Point | null = null;
 
   constructor(public world: World) {
+    this.setupCord();
+  }
+
+  reload() {
+    if (!this.handle?.exists) return;
+
+    this.weapon = this.world.create().add(
+      new Weapon(),
+      new DynamicBody(this.handle.get(DynamicBody).position, {
+        mass: 1,
+        friction: 0.1,
+      }),
+      new Sprite(drawWeapon),
+    );
+
+    zzfxP(sfx.shoot4);
+
+    // this.addDragInput();
+  }
+
+  setupCord() {
+    if (this.cord) this.cord.delete();
+    if (this.weapon) (this.weapon.delete(), (this.weapon = null));
+
     const { cw, ch } = Stage;
 
     this.position = pt(cw * 0.5 - size.x * 0.5, ch * 0.9);
@@ -45,8 +68,8 @@ export class SlingshotFrame {
     this.anchorLeft = anchor1;
     this.anchorRight = anchor2;
 
-    this.rope = world.create().add(
-      new ElasticLine(world, this.anchorRight, this.anchorLeft, 3, {
+    this.cord = this.world.create().add(
+      new ElasticLine(this.world, this.anchorRight, this.anchorLeft, 3, {
         mass: 3.2, // makes everything slower
         damping: 1.9, // turn up for less jiggle
         jointsAttraction: 592, // turn up for stronger push and compensato for mass
@@ -54,34 +77,28 @@ export class SlingshotFrame {
       new Sprite(drawSlingshotStrips),
     );
 
-    this.handle = (this.rope.get(ElasticLine) as ElasticLine).joints[1];
-
-    // Turn this into a system
-    this.reload = () => {
-      this.weapon = world.create().add(
-        new Weapon(),
-        new DynamicBody(this.handle.get(DynamicBody).position, {
-          mass: 1,
-          friction: 0.1,
-        }),
-        new Sprite(drawWeapon),
-      );
-    };
+    this.handle = (this.cord.get(ElasticLine) as ElasticLine).joints[1];
   }
 
   addDragInput() {
-    this.handle.add(
+    this.handle?.exists?.add(
       new DragInput({
         onclick: this.grabCord.bind(this),
-        onmove: this.followCord.bind(this),
-        onrelease: this.release.bind(this),
+        onmove: this.pullCord.bind(this),
+        onrelease: this.fire.bind(this),
       }),
     );
   }
 
+  removeDragInput() {
+    this.handle?.exists?.remove(DragInput);
+  }
+
   grabCord(pointerPos: Point) {
+    if (!this.weapon?.exists || !this.handle?.exists) return;
+
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
-    const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
+    const weaponBody: DynamicBody = this.weapon.get(DynamicBody);
 
     const distance = pointerPos.distance(handleBody.position);
 
@@ -89,7 +106,7 @@ export class SlingshotFrame {
     if (distance <= GRAB_DISTANCE) {
       this.grabPos = pointerPos;
       handleBody.fixed = true;
-      weaponBody && (weaponBody.fixed = true);
+      weaponBody.fixed = true;
     }
   }
 
@@ -98,12 +115,12 @@ export class SlingshotFrame {
   }
 
   pullCord(pointerPos: Point) {
-    if (!this.grabPos) return;
+    if (!this.grabPos || !this.weapon?.exists || !this.handle?.exists) return;
 
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
     const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
 
-    // Pulling noises
+    // Pulling SFX
 
     // const dp = this.grabPos.sub(pointerPos);
     // const side = orient(this.anchorLeft, this.anchorRight, dp);
@@ -118,17 +135,17 @@ export class SlingshotFrame {
       // prettier-ignore
       zzfxP(zzfxG(...[.6,0,frequency,.01,.03,.04,1,1.66,-22,,,,.2,.3,76,,,.62,.01,,163]));
       this.playing = true;
-      Timeout(this.world.create(), 1 / 20, () => (this.playing = false));
+      Timeout(this.world, 1 / 20, () => (this.playing = false));
     }
 
     this.grabPos = pointerPos;
 
-    handleBody && handleBody.position.set(this.grabPos.x, this.grabPos.y);
-    weaponBody && weaponBody.velocity.copy(handleBody.velocity);
+    handleBody.position.set(this.grabPos.x, this.grabPos.y);
+    weaponBody.velocity.copy(handleBody.velocity);
   }
 
-  release() {
-    if (!this.grabPos || !this.weapon) return;
+  fire() {
+    if (!this.grabPos || !this.weapon?.exists || !this.handle?.exists) return;
 
     this.grabPos = null;
 
@@ -151,22 +168,15 @@ export class SlingshotFrame {
     const frequency = lerp(110, 220, t);
     const slide = lerp(0, 20, t);
     const deltaSlide = lerp(-50, -10, t);
-    
+
     // prettier-ignore
     zzfxP(zzfxG(...[.2,,frequency,.01,.13,.09,,2.5,slide,deltaSlide,,,,,,,,.91,.1]));
     this.weapon = null;
+    // this.removeDragInput();
   }
 }
 
-export function createSlingshot(world: World): Entity {
-  const slingshot = world.create().add(new SlingshotFrame(world));
-
-  drawSlingshotFrame(slingshot);
-
-  return slingshot;
-}
-
-function drawSlingshotFrame(e: Entity) {
+export function drawSlingshotFrame(e: Entity) {
   const { ctx, cw } = Stage.setActiveLayer(LayerName.BG_3);
   const { position, armPos } = e.get(SlingshotFrame) as SlingshotFrame;
 
@@ -174,6 +184,9 @@ function drawSlingshotFrame(e: Entity) {
 
   ctx.fillStyle = DARK_WOOD;
   ctx.fillRect(position.x, position.y, size.x, -size.y);
+  ctx.beginPath();
+  ctx.ellipse(position.x + size.x / 2, position.y, size.x / 2, size.x / 4, 0, 0, Math.PI * 2);
+  ctx.fill();
 
   ctx.translate(cw / 2, armPos.y);
 

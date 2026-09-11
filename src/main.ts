@@ -5,7 +5,6 @@ import {
   Game,
   Health,
   Hunter,
-  Position,
   Prey,
   Rainbow,
   Score,
@@ -22,17 +21,17 @@ import {
   DamageSystem,
   FiredProjectileSystem,
   GameCycle,
+  getFoalPositions,
   RainbowMovement,
   RainbowSystem,
   ReloadSystem,
   Render,
   spawnFoals,
-  TargetingSystem,
+  TargetingSystem
 } from "./engine/systems";
 import { drawShadow } from "./entities/foal";
-import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
+import { drawSlingshotFrame, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
-import { generateSprites } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
 import { bounce, lerp } from "./utils/MathUtils";
 import { pt } from "./utils/Point";
@@ -80,12 +79,26 @@ function init() {
   initGradients();
 
   Castle.draw();
-  Stage.addResizeListener(Castle.draw);
 
-  createSlingshot(world);
+  const slingshot = world.create().add(new SlingshotFrame(world));
+  const foals = spawnFoals(world);
 
-  spawnFoals(world).forEach((e) =>
-    drawShadow(e.get(DynamicBody).position.add(pt(0, 20))),
+  drawSlingshotFrame(slingshot);
+  getFoalPositions().forEach((p) => drawShadow(p.add(pt(0, 20))));
+
+  Stage.addResizeListener(
+    () => (
+      Castle.draw(),
+      (slingshot.get(SlingshotFrame) as SlingshotFrame).setupCord(),
+      drawSlingshotFrame(slingshot),
+      getFoalPositions().forEach(
+        (p, idx) => (
+          foals[idx].exists &&
+            (foals[idx].get(DynamicBody) as DynamicBody).position.copy(p),
+          drawShadow(p.add(pt(0, 20)))
+        ),
+      )
+    ),
   );
 
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);

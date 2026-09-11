@@ -1,5 +1,12 @@
 import type { Entity, World } from "../ecs";
-import { DEG2RAD, easeIn, easeInBack, easeOut, lerp } from "../utils/MathUtils";
+import {
+  DEG2RAD,
+  easeIn,
+  easeInBack,
+  easeOut,
+  lerp,
+  rand,
+} from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Interval, Transform } from "../utils/TimeUtils";
@@ -10,7 +17,7 @@ import { LayerName, Stage } from "./Stage";
 
 export function deathParticles(world: World, position: Point) {
   for (let i = 0; i < 20; i++) {
-    const angle = lerp(0, 2 * Math.PI, Math.random());
+    const angle = rand(0, 2 * Math.PI);
     const startVelocity = pt(0, 1).rotate(angle).scale(20);
 
     world.create().add(
@@ -18,7 +25,7 @@ export function deathParticles(world: World, position: Point) {
         startVelocity,
       }),
       FadeTransform(1 / 3),
-      new Sprite((e) => drawCircle(e, lerp(15, 40, Math.random()))),
+      new Sprite((e) => drawCircle(e, rand(15, 40))),
     );
   }
 }
@@ -27,10 +34,8 @@ export function bloodParticles(world: World, position: Point) {
   const color = rgb(221, 19, 19);
 
   for (let i = 0; i < 20; i++) {
-    const angle = lerp(130 * DEG2RAD, 230 * DEG2RAD, Math.random());
-    const startVelocity = pt(0, 1)
-      .rotate(angle)
-      .scale(lerp(10, 30, Math.random()));
+    const angle = rand(130 * DEG2RAD, 230 * DEG2RAD);
+    const startVelocity = pt(0, 1).rotate(angle).scale(rand(10, 30));
 
     const body = new DynamicBody(position.clone(), {
       startVelocity,
@@ -64,11 +69,9 @@ export function waterParticles(
 ) {
   const color = rgb(225, 243, 255);
 
-  const emitter = Interval(world.create(), 1 / 8, () => {
-    const angle = lerp(90 * DEG2RAD, 210 * DEG2RAD, Math.random());
-    const startVelocity = pt(0, 1)
-      .rotate(angle)
-      .scale(lerp(10, 30, Math.random()));
+  const emitter = Interval(world, 1 / 8, () => {
+    const angle = rand(90 * DEG2RAD, 210 * DEG2RAD);
+    const startVelocity = pt(0, 1).rotate(angle).scale(rand(10, 30));
 
     const position = unicornBody.position.add(
       unicornData.facingEast ? UNICORN_EYES : UNICORN_EYES.flip(),
@@ -79,7 +82,7 @@ export function waterParticles(
     });
     body.addForce(GRAVITY);
 
-    const radius = lerp(5, 8, Math.random());
+    const radius = rand(5, 8);
 
     world
       .create()
@@ -93,8 +96,6 @@ export function waterParticles(
   });
   return emitter;
 }
-
-function rainbowParticle(e: Entity) {}
 
 export function drawCircle(e: Entity, radius: number, color = rgb(1, 1, 1)) {
   const sprite: Sprite = e.get(Sprite);
