@@ -1,4 +1,4 @@
-import type { Entity } from "../ecs";
+import type { Entity, World } from "../ecs";
 import { Rainbow, Sprite } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
@@ -10,10 +10,10 @@ import { rainbowFace } from "./sprites";
 export const RAINBOW_INNER_RADIUS = 40;
 export const RAINBOW_OUTER_RADIUS = 50;
 
-export function drawRainbow(e: Entity) {
+export function drawRainbow(e: Entity, world: World) {
   const [{ angle }, rainbowData, rainbowBody]: [Sprite, Rainbow, DynamicBody] =
     e.get(Sprite, Rainbow, DynamicBody);
-  const { position: center } = rainbowBody;
+  const { position } = rainbowBody;
   const { innerRadius, outerRadius } = rainbowData;
 
   // Rounded star
@@ -22,7 +22,7 @@ export function drawRainbow(e: Entity) {
   const { ctx } = Stage.setActiveLayer(LayerName.Game);
   const dphi = (Math.PI * 2) / (points * 2);
 
-  ctx.translate(center.x, center.y);
+  ctx.translate(position.x, position.y);
 
   let start = pt(1, 0).scale(outerRadius).rotate(angle);
   ctx.beginPath();

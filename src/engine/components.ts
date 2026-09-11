@@ -6,6 +6,7 @@ import {
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
+import { circle } from "../utils/CanvasUtils";
 import {
   bounce,
   easeIn,
@@ -13,16 +14,17 @@ import {
   easeOut,
   lerp,
   lerp2,
-  PI,
   sway,
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
+import { PASTEL_RAINBOW } from "../utils/SpriteUtils";
 import {
   Interval,
   Transform,
   type timestamp,
   type Transformer,
 } from "../utils/TimeUtils";
+import { FadeTransform } from "./particles";
 import { DynamicBody } from "./Physics2D";
 import { sfx, zzfxP } from "./sfx";
 import { LayerName, Stage } from "./Stage";
@@ -300,7 +302,7 @@ export class Spawner {
         ),
     );
 
-    this.powerupInterval = Interval(world.create(), 10, () => {
+    this.powerupInterval = Interval(world.create(), 30, () => {
       const dice = Math.random() < 0.5;
       const startY = 120;
       const startX = dice ? -100 : Stage.cw + 100;
@@ -308,12 +310,13 @@ export class Spawner {
       const swayEndX = dice ? Stage.cw - 100 : 100;
       const exitX = lerp(Stage.cw * 0.3, Stage.cw * 0.8, Math.random());
 
+      const rainbowData = new Rainbow();
       const rainbow = world
         .create()
         .add(
-          new Rainbow(),
+          rainbowData,
           new DynamicBody(pt(startX, startY)),
-          new Sprite(drawRainbow),
+          new Sprite((e) => drawRainbow(e, world)),
         );
 
       const { position }: DynamicBody = rainbow.get(DynamicBody);
@@ -329,6 +332,36 @@ export class Spawner {
             Rainbow.soundEmitter = Interval(world.create(), 1 / 3, () =>
               zzfxP(sfx.rainbow2),
             );
+
+          rainbowData.particleEmitter = Interval(world.create(), 1 / 60, () => {
+            PASTEL_RAINBOW.forEach((color, idx) => {
+              world.create().add(
+                new DynamicBody(position.add(Point.random(pt(), pt(2))), {
+                  startVelocity: pt(1, 0).rotate(Math.random() * Math.PI * 2),
+                }),
+                FadeTransform(2),
+                new Sprite((e) => {
+                  const [{ position: p }, { transparency }]: [
+                    DynamicBody,
+                    Sprite,
+                  ] = e.get(DynamicBody, Sprite);
+                  const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
+                  ctx.save();
+                  ctx.resetTransform();
+                  ctx.globalAlpha = transparency;
+                  const rowSize = 8;
+                  ctx.fillStyle = color;
+                  const pos = pt(
+                    p.x - rowSize * 0.5,
+                    p.y + PASTEL_RAINBOW.length * rowSize * 0.5 - rowSize * idx,
+                  );
+                  // circle(pos, rowSize, color);
+                  ctx.fillRect(pos.x, pos.y, rowSize, rowSize);
+                  ctx.restore();
+                }),
+              );
+            });
+          });
         },
       };
       const swayTransform: Transformer = {
@@ -370,14 +403,11 @@ export class Rainbow {
   innerRadius = RAINBOW_INNER_RADIUS;
   outerRadius = RAINBOW_OUTER_RADIUS;
   radius = 40;
-  particleEmitter: Entity;
+  particleEmitter: Entity | null = null;
   static soundEmitter: Entity;
 
-  constructor(world: World) {
-    // this.particleEmitter = world.create().add(new Interval(1 / 8, () => world.create().add(new Sprite(dra))));
-  }
-
   destructor() {
+    this.particleEmitter?.delete();
     Rainbow.soundEmitter?.exists?.delete();
   }
 }

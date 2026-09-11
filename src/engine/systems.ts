@@ -5,7 +5,7 @@ import { drawText } from "../utils/CanvasUtils";
 import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { Timeout, Transform } from "../utils/TimeUtils";
-import { rgba } from "./color";
+import { rgb } from "./color";
 import {
   DragInput,
   Frozen,
@@ -22,7 +22,7 @@ import {
   Unicorn,
   UnicornEmotion,
   Weapon,
-  WeaponState
+  WeaponState,
 } from "./components";
 import { bloodParticles, deathParticles, waterParticles } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
@@ -354,7 +354,7 @@ export class FiredProjectileSystem {
   }
 }
 
-const YELLOW = rgba(179, 255, 0, 1);
+const YELLOW = rgb(179, 255, 0);
 export class GameCycle {
   totalLives = 0;
   preys: Query;
@@ -526,7 +526,7 @@ export class GameCycle {
 
     const title = this.world.create().add(
       new Sprite(() => {
-        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
+        const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
         drawText(GAME_TITLE, pt(cw * 0.5, ch * 0.2), {
           fill: YELLOW,
           lineWidth: 2,
@@ -537,8 +537,8 @@ export class GameCycle {
 
     const text = this.world.create().add(
       new Sprite(() => {
-        const { ch, cw } = Stage.setActiveLayer(LayerName.Game);
-        drawText("Tap to start", pt(cw * 0.5, ch * 0.5));
+        const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
+        drawText("Tap to play", pt(cw * 0.5, ch * 0.5));
       }),
     );
 
