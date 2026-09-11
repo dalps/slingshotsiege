@@ -4,10 +4,11 @@ import { ElasticLine } from "../engine/ElasticLine";
 import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { sfx } from "../engine/sfx";
 import { LayerName, Stage } from "../engine/Stage";
-import { zzfxP } from "../engine/zzfx";
-import { DEG2RAD } from "../utils/MathUtils";
+import { zzfxG, zzfxP } from "../engine/zzfx";
+import { DEG2RAD, lerp, lerp2, orient } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { DARK_WOOD, LIGHT_WOOD, WHITE } from "../utils/SpriteUtils";
+import { Timeout } from "../utils/TimeUtils";
 import { drawShadow } from "./foal";
 
 const GRAB_DISTANCE = 65;
@@ -20,7 +21,7 @@ export class SlingshotFrame {
   handle: Entity;
   rope: Entity;
   weapon: Entity | null = null;
-
+  playing = false;
   reload: Function;
 
   anchorLeft: Point;
@@ -28,9 +29,8 @@ export class SlingshotFrame {
   position: Point;
   armPos: Point;
   grabPos: Point | null = null;
-  pointerPos: Point | null = null;
 
-  constructor(world: World) {
+  constructor(public world: World) {
     const { cw, ch } = Stage;
 
     this.position = pt(cw * 0.5 - size.x * 0.5, ch * 0.9);
@@ -93,11 +93,33 @@ export class SlingshotFrame {
     }
   }
 
-  followCord(pointerPos: Point) {
+  get midpoint() {
+    return lerp2(this.anchorLeft, this.anchorRight, 0.5);
+  }
+
+  pullCord(pointerPos: Point) {
     if (!this.grabPos) return;
 
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
     const weaponBody: DynamicBody = this.weapon?.get(DynamicBody);
+
+    // Pulling noises
+
+    // const dp = this.grabPos.sub(pointerPos);
+    // const side = orient(this.anchorLeft, this.anchorRight, dp);
+
+    const oldDist = this.grabPos.distance(this.midpoint);
+    const newDist = pointerPos.distance(this.midpoint);
+    const threshhold = 5;
+    const pulling = newDist - oldDist > threshhold;
+    const frequency = lerp(20, 440, newDist / this.midpoint.distance(pt()));
+
+    if (pulling && !this.playing) {
+      // prettier-ignore
+      zzfxP(zzfxG(...[.6,0,frequency,.01,.03,.04,1,1.66,-22,,,,.2,.3,76,,,.62,.01,,163]));
+      this.playing = true;
+      Timeout(this.world.create(), 1 / 20, () => (this.playing = false));
+    }
 
     this.grabPos = pointerPos;
 
@@ -125,8 +147,13 @@ export class SlingshotFrame {
     weaponBody.addForce(GRAVITY);
     weaponData.state = WeaponState.Fired;
 
-    zzfxP(sfx.shoot2);
-
+    const t = weaponBody.velocity.abs() / 500;
+    const frequency = lerp(110, 220, t);
+    const slide = lerp(0, 20, t);
+    const deltaSlide = lerp(-50, -10, t);
+    
+    // prettier-ignore
+    zzfxP(zzfxG(...[.2,,frequency,.01,.13,.09,,2.5,slide,deltaSlide,,,,,,,,.91,.1]));
     this.weapon = null;
   }
 }

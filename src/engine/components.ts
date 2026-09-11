@@ -5,10 +5,7 @@ import {
   RAINBOW_INNER_RADIUS,
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
-import {
-  drawWeapon,
-  SlingshotFrame
-} from "../entities/slingshot";
+import { drawWeapon, SlingshotFrame } from "../entities/slingshot";
 import {
   bounce,
   easeIn,
@@ -180,10 +177,7 @@ export class Unicorn {
     this.expression = UnicornEmotion.Furious;
   }
 
-  /**
-   * Passes ownership of the horn
-   */
-  passHornToSlingshot(world: World, unicorn: Entity, target: Entity) {
+  passHornToSlingshot(world: World, unicorn: Entity, slingshot: Entity) {
     // if (!this.horn || !this.horn?.exists)
     //   throw Error("Failure: no horn on unicorn.");
     // if (this.hornProgress <= 1) {
@@ -195,16 +189,12 @@ export class Unicorn {
       Unicorn,
       DynamicBody,
     );
-    const slingshotData: SlingshotFrame = target.get(SlingshotFrame);
+    const slingshotData: SlingshotFrame = slingshot.get(SlingshotFrame);
 
     const startPos = unicornBody.position.add(
       unicornData.facingEast ? UNICORN_HORN_ORIGIN : UNICORN_HORN_ORIGIN.flip(),
     );
-    const destPos = lerp2(
-      slingshotData.anchorLeft,
-      slingshotData.anchorRight,
-      0.5,
-    );
+    const destPos = slingshotData.midpoint;
 
     const fakeWeapon = world.create().add(
       new Weapon(),
@@ -225,11 +215,11 @@ export class Unicorn {
           const sprite: Sprite = e.get(Sprite);
           sprite.scale = lerp(0.3, 0.7, t);
           weaponBody.position = lerp2(startPos, destPos, t, {
-            easeX: easeInOut,
             easeY: easeInBack,
           });
         },
         end: (e) => {
+          // Horn landed on rope
           this.horn = null;
           fakeWeapon.delete();
           slingshotData.reload();

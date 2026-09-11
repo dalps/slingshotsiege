@@ -185,9 +185,7 @@ export class RainbowSystem {
         deathParticles(this.world, rainbowBody.position);
         r.delete();
 
-        weapon.lastKill = performance.now();
-        weapon.points += FIRST_KILL_POINTS;
-        showScoreForKill(this.world, FIRST_KILL_POINTS, rainbowBody.position);
+        // Doesn't increase the score
 
         this.world.query(Unicorn).iterate((e, unicorn: Unicorn) => {
           ((unicorn.expression = UnicornEmotion.Content),
