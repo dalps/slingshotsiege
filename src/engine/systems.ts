@@ -122,6 +122,7 @@ export class DamageSystem {
         if (health.lives <= 0) {
           zzfxP(sfx.death);
           preyEntity.delete();
+
           // todo: display carcass sprite
 
           this.unicorn.iterate(

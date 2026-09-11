@@ -4,14 +4,16 @@ export const DEG2RAD = Math.PI / 180;
 export const RAD2DEG = 180 / Math.PI;
 export const { PI, sin, cos } = Math;
 
-export const easeInBack = (x: number): number => {
-  const c1 = 1.70158;
+// https://www.desmos.com/calculator/oxmdpbhwbs
+export const easeInBack = (x: number, c1 = 1.70158): number => {
   const c3 = c1 + 1;
 
   return c3 * x * x * x - c1 * x * x;
 };
-export const easeIn = (t: number) => Math.cos(t * Math.PI * 0.5 + Math.PI) + 1;
-export const easeOut = (t: number) => Math.sin(t * Math.PI * 0.5);
+export const easeIn = (t: number) => Math.cos((t * Math.PI) / 2 + Math.PI) + 1;
+export const easeOut = (t: number) => Math.sin((t * Math.PI) / 2);
+export const easeInOut = (t: number) =>
+  Math.cos(t * Math.PI + Math.PI) / 2 + 0.5;
 
 export const sway = (t: number, iterations = 5) =>
   Math.cos(t * iterations * PI - PI) * 0.5 + 0.5;
@@ -71,8 +73,13 @@ export function onSegment(a: Point, b: Point, p: Point) {
   return orient(a, b, p) === 0 && inDisk(a, b, p);
 }
 
-export function lerp2(min: Point, max: Point, t: number): Point {
-  return pt(lerp(min.x, max.x, t), lerp(min.y, max.y, t));
+export function lerp2(
+  min: Point,
+  max: Point,
+  t: number,
+  { easeX = (t: number) => t, easeY = (t: number) => t } = {},
+): Point {
+  return pt(lerp(min.x, max.x, easeX(t)), lerp(min.y, max.y, easeY(t)));
 }
 
 export function damp2I(

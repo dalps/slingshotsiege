@@ -11,6 +11,9 @@ import { DARK_WOOD, LIGHT_WOOD, WHITE } from "../utils/SpriteUtils";
 import { drawShadow } from "./foal";
 
 const GRAB_DISTANCE = 65;
+const size = pt(20, 180);
+const armAngle = 70; // degrees
+const armLength = 80;
 
 // Make it into a system which queries DragInput
 export class SlingshotFrame {
@@ -22,22 +25,17 @@ export class SlingshotFrame {
 
   anchorLeft: Point;
   anchorRight: Point;
-  size = pt(20, 180);
-  armAngle = 70;
-  armLength = 80;
   position: Point;
   armPos: Point;
   grabPos: Point | null = null;
-  shooting: boolean = false;
-  releasing: boolean = false;
   pointerPos: Point | null = null;
 
   constructor(world: World) {
     const { cw, ch } = Stage;
 
-    this.position = pt(cw * 0.5 - this.size.x * 0.5, ch * 0.9);
-    this.armPos = pt(cw * 0.5, this.position.y - this.size.y);
-    const { armAngle, armLength, armPos } = this;
+    this.position = pt(cw * 0.5 - size.x * 0.5, ch * 0.9);
+    this.armPos = pt(cw * 0.5, this.position.y - size.y);
+    const { armPos } = this;
     const [anchor1, anchor2] = [1, -1].map((o) =>
       armPos
         .addY(armLength)
@@ -88,7 +86,6 @@ export class SlingshotFrame {
     const distance = pointerPos.distance(handleBody.position);
 
     // Grab & follow
-    // Todo: make grabbing area larger and rectangular instead of a circle
     if (distance <= GRAB_DISTANCE) {
       this.grabPos = pointerPos;
       handleBody.fixed = true;
@@ -112,7 +109,6 @@ export class SlingshotFrame {
     if (!this.grabPos || !this.weapon) return;
 
     this.grabPos = null;
-    this.shooting = true;
 
     const handleBody: DynamicBody = this.handle.get(DynamicBody);
     handleBody.fixed = false; // Let physics govern position now
@@ -145,9 +141,7 @@ export function createSlingshot(world: World): Entity {
 
 function drawSlingshotFrame(e: Entity) {
   const { ctx, cw } = Stage.setActiveLayer(LayerName.BG_3);
-  const { position, size, armAngle, armLength, armPos } = e.get(
-    SlingshotFrame,
-  ) as SlingshotFrame;
+  const { position, armPos } = e.get(SlingshotFrame) as SlingshotFrame;
 
   drawShadow(position.add(pt(size.x / 2, 0)), 30);
 
@@ -185,8 +179,7 @@ function drawSlingshotStrips(e: Entity) {
   const { ctx } = Stage.setActiveLayer(LayerName.Game);
 
   ctx.lineWidth = 5;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.lineCap = ctx.lineJoin = "round";
   ctx.strokeStyle = WHITE;
 
   ctx.beginPath();
@@ -203,7 +196,8 @@ function drawSlingshotStrips(e: Entity) {
 }
 
 export function drawWeapon(e: Entity) {
-  const [weaponData, weaponBody]: [Weapon, DynamicBody] = e.get(
+  const [sprite, weaponData, weaponBody]: [Sprite, Weapon, DynamicBody] = e.get(
+    Sprite,
     Weapon,
     DynamicBody,
   );
@@ -214,6 +208,7 @@ export function drawWeapon(e: Entity) {
 
   ctx.translate(p.x, p.y);
   ctx.rotate(v.angle());
+  ctx.scale(sprite.scale, sprite.scale);
   ctx.lineWidth = 5;
   ctx.strokeStyle = "#ccc";
   ctx.fillStyle = WHITE;
@@ -233,7 +228,7 @@ export function drawWeapon(e: Entity) {
 export function drawFarGoneWeapon(e: Entity) {
   const weaponBody: DynamicBody = e.get(DynamicBody);
 
-  const { ctx } = Stage.getLayer(LayerName.BG_2)!;
+  const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
   // Stage.clearLayer(LayerName.BG_2);
   const [height, radius] = [60, 6];
   const { position: p, velocity: v } = weaponBody;
@@ -241,7 +236,7 @@ export function drawFarGoneWeapon(e: Entity) {
   ctx.translate(p.x, p.y);
   ctx.rotate(v.angle());
   ctx.lineWidth = 5;
-  ctx.fillStyle = "#8493a3ff";
+  ctx.fillStyle = "#8493a3";
   ctx.beginPath();
   ctx.moveTo(-radius, 0);
   ctx.lineTo(0, -height);

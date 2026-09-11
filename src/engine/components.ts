@@ -5,12 +5,15 @@ import {
   RAINBOW_INNER_RADIUS,
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
-import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
-import { circle } from "../utils/CanvasUtils";
+import {
+  drawWeapon,
+  SlingshotFrame
+} from "../entities/slingshot";
 import {
   bounce,
   easeIn,
   easeInBack,
+  easeInOut,
   easeOut,
   lerp,
   lerp2,
@@ -103,73 +106,47 @@ export class DragInput {
     this.onclick = onclick;
     this.onrelease = onrelease;
 
-    const handleTouchStart = (e: TouchEvent) => {
+    const handleClick = (resolve: (e: Event) => Point) => (e: Event) => {
       e.preventDefault();
-
-      this.dragPos = uiLayer.resolveTouchPosition(e);
-      this.onclick(this.dragPos);
+      this.onclick((this.dragPos = resolve(e)));
     };
 
-    const handleTouchMove = (e: TouchEvent) => {
+    const handleMove = (resolve: (e: Event) => Point) => (e: Event) => {
       e.preventDefault();
-
-      this.dragPos = uiLayer.resolveTouchPosition(e);
-      this.onmove(this.dragPos);
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      e.preventDefault();
-
-      this.onrelease(this.dragPos!);
-      this.dragPos = null;
-    };
-
-    const handleMouseDown = (e: MouseEvent) => {
-      e.preventDefault();
-
-      this.dragPos = uiLayer.resolveMousePosition(e);
-      this.onclick(this.dragPos);
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      e.preventDefault();
-
       if (!this.dragPos || e.buttons === 0) return;
-      this.dragPos = uiLayer.resolveMousePosition(e);
-      this.onmove(this.dragPos);
+      this.onmove((this.dragPos = resolve(e)));
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
+    const handleRelease = (e: Event) => {
       e.preventDefault();
-
       this.onrelease(this.dragPos!);
       this.dragPos = null;
     };
 
-    ui.onmousedown = handleMouseDown;
-    ui.onmousemove = handleMouseMove;
-    ui.onmouseup = handleMouseUp;
-    ui.ontouchstart = handleTouchStart;
-    ui.ontouchmove = handleTouchMove;
-    ui.ontouchend = handleTouchEnd;
+    ui.onmousedown = handleClick(uiLayer.resolveMousePosition.bind(uiLayer));
+    ui.onmousemove = handleMove(uiLayer.resolveMousePosition.bind(uiLayer));
+    ui.onmouseup = handleRelease;
+    ui.ontouchstart = handleClick(uiLayer.resolveTouchPosition.bind(uiLayer));
+    ui.ontouchmove = handleMove(uiLayer.resolveTouchPosition.bind(uiLayer));
+    ui.ontouchend = handleRelease;
 
     window.onmousemove = (e: MouseEvent) => {
       const { clientX: x, clientY: y } = e;
       const { bottom, top, left, right } = uiLayer.rect;
 
-      if (x < left || x > right || y < top || y > bottom) {
+      if (x < left || x >= right || y < top || y >= bottom) {
         this.onrelease(this.dragPos!);
         this.dragPos = null;
       }
     };
 
     this.destructor = () => {
-      ui.removeEventListener("mousedown", handleMouseDown);
-      ui.removeEventListener("mousemove", handleMouseMove);
-      ui.removeEventListener("mouseup", handleMouseUp);
-      ui.removeEventListener("touchstart", handleTouchStart);
-      ui.removeEventListener("touchmove", handleTouchMove);
-      ui.removeEventListener("touchend", handleTouchEnd);
+      ui.removeEventListener("mousedown", ui.onmousedown!);
+      ui.removeEventListener("mousemove", ui.onmousemove!);
+      ui.removeEventListener("mouseup", ui.onmouseup!);
+      ui.removeEventListener("touchstart", ui.ontouchstart!);
+      ui.removeEventListener("touchmove", ui.ontouchmove!);
+      ui.removeEventListener("touchend", ui.ontouchend!);
     };
   }
 }
@@ -185,6 +162,7 @@ export const enum UnicornEmotion {
 }
 
 export const UNICORN_EYES = pt(55, -175);
+export const UNICORN_HORN_ORIGIN = pt(60, -178);
 
 export class Unicorn {
   expression = UnicornEmotion.Content;
@@ -192,7 +170,6 @@ export class Unicorn {
   boundingBoxSize = pt(200);
   horn: Entity | null = null;
   hornProgress = 0;
-  hornOrigin = pt(60, -178);
   facingEast = true;
 
   flip() {
@@ -201,26 +178,6 @@ export class Unicorn {
 
   getPissed() {
     this.expression = UnicornEmotion.Furious;
-  }
-
-  /**
-   * Spawns a new horn
-   */
-  growHorn(world: World) {
-    world.create().add(
-      new Transform({
-        duration: 1,
-        update: (e, stage) => {
-          this.hornProgress = stage;
-        },
-        end: (e) => {
-          this.hornProgress = 1;
-          // world
-          //   .query(SlingshotFrame)
-          //   .iterate((slingshot) => this.passHornToSlingshot(world, slingshot));
-        },
-      }),
-    );
   }
 
   /**
@@ -234,42 +191,51 @@ export class Unicorn {
     //   return;
     // }
 
-    const unicornBody: SlingshotFrame = unicorn.get(DynamicBody);
+    const [unicornData, unicornBody]: [Unicorn, DynamicBody] = unicorn.get(
+      Unicorn,
+      DynamicBody,
+    );
     const slingshotData: SlingshotFrame = target.get(SlingshotFrame);
-    const handlePosition = slingshotData.handle.get(DynamicBody).position;
 
-    const startPosition = unicornBody.position.add(this.hornOrigin);
+    const startPos = unicornBody.position.add(
+      unicornData.facingEast ? UNICORN_HORN_ORIGIN : UNICORN_HORN_ORIGIN.flip(),
+    );
+    const destPos = lerp2(
+      slingshotData.anchorLeft,
+      slingshotData.anchorRight,
+      0.5,
+    );
 
     const fakeWeapon = world.create().add(
       new Weapon(),
-      new DynamicBody(startPosition, {
+      new DynamicBody(startPos, {
         mass: 1,
         friction: 0.1,
       }),
-      new Sprite(drawFarGoneWeapon),
+      new Sprite(drawWeapon),
     );
     this.horn = fakeWeapon;
 
     slingshotData.weapon = fakeWeapon;
     const weaponBody: DynamicBody = fakeWeapon.get(DynamicBody);
-    // todo: Remove state from points. State sharing is making this so confusing, make sure points are never updated
     fakeWeapon.add(
       new Transform({
-        duration: 0.5,
+        duration: 0.7,
         update: (e, t) => {
-          weaponBody.position = lerp2(startPosition, handlePosition, t);
+          const sprite: Sprite = e.get(Sprite);
+          sprite.scale = lerp(0.3, 0.7, t);
+          weaponBody.position = lerp2(startPos, destPos, t, {
+            easeX: easeInOut,
+            easeY: easeInBack,
+          });
         },
-        end: () => {
+        end: (e) => {
           this.horn = null;
           fakeWeapon.delete();
           slingshotData.reload();
         },
       }),
     );
-
-    // let { horn } = this;
-    // this.hornProgress = 0;
-    // return horn;
   }
 }
 
