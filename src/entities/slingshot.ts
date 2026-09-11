@@ -7,7 +7,8 @@ import { LayerName, Stage } from "../engine/Stage";
 import { zzfxP } from "../engine/zzfx";
 import { DEG2RAD } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { WHITE } from "../utils/SpriteUtils";
+import { DARK_WOOD, LIGHT_WOOD, WHITE } from "../utils/SpriteUtils";
+import { drawShadow } from "./foal";
 
 const GRAB_DISTANCE = 65;
 
@@ -135,31 +136,41 @@ export class SlingshotFrame {
 }
 
 export function createSlingshot(world: World): Entity {
-  const slingshot = world
-    .create()
-    .add(new SlingshotFrame(world), new Sprite(drawSlingshotFrame));
+  const slingshot = world.create().add(new SlingshotFrame(world));
+
+  drawSlingshotFrame(slingshot);
 
   return slingshot;
 }
 
 function drawSlingshotFrame(e: Entity) {
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_3);
+  const { ctx, cw } = Stage.setActiveLayer(LayerName.BG_3);
   const { position, size, armAngle, armLength, armPos } = e.get(
     SlingshotFrame,
   ) as SlingshotFrame;
 
-  ctx.fillStyle = "#a96f3cff";
+  drawShadow(position.add(pt(size.x / 2, 0)), 30);
 
+  ctx.fillStyle = DARK_WOOD;
   ctx.fillRect(position.x, position.y, size.x, -size.y);
 
-  ctx.translate(cw * 0.5, armPos.y);
-  ctx.rotate((180 - armAngle * 0.5) * DEG2RAD);
-  ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
-  ctx.rotate(armAngle * DEG2RAD);
-  ctx.fillRect(-size.x * 0.5, 0, size.x, armLength);
-  // circle(armPos, 5);
+  ctx.translate(cw / 2, armPos.y);
+
+  [180 - armAngle / 2, armAngle].forEach((angle) => {
+    ctx.rotate(angle * DEG2RAD);
+    ctx.fillRect(-size.x / 2, 0, size.x, armLength);
+    ctx.fillStyle = LIGHT_WOOD;
+    ctx.beginPath();
+    ctx.ellipse(0, armLength, size.x / 2, size.x / 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = DARK_WOOD;
+    ctx.beginPath();
+    ctx.ellipse(0, armLength, size.x / 4, size.x / 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
 
   ctx.resetTransform();
+
   // circle(anchor1, 5, "white");
   // circle(anchor2, 5, "white");
 }
@@ -171,12 +182,12 @@ function drawSlingshotStrips(e: Entity) {
   const joints: DynamicBody[] = (e.get(ElasticLine) as ElasticLine).joints.map(
     (e) => e.get(DynamicBody),
   );
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.Game);
+  const { ctx } = Stage.setActiveLayer(LayerName.Game);
 
   ctx.lineWidth = 5;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "#fff";
+  ctx.strokeStyle = WHITE;
 
   ctx.beginPath();
   ctx.moveTo(joints[0].position.x, joints[0].position.y);

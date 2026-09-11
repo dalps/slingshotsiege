@@ -5,6 +5,7 @@ import {
   Game,
   Health,
   Hunter,
+  Position,
   Prey,
   Rainbow,
   Score,
@@ -28,8 +29,10 @@ import {
   spawnFoals,
   TargetingSystem,
 } from "./engine/systems";
+import { drawShadow } from "./entities/foal";
 import { createSlingshot, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
+import { generateSprites } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
 import { bounce, lerp } from "./utils/MathUtils";
 import { pt } from "./utils/Point";
@@ -65,6 +68,8 @@ registerComponents(
   Sprite,
 );
 
+// generateSprites();
+
 const world = createWorld();
 
 const gameCycle = new GameCycle(world);
@@ -78,7 +83,10 @@ function init() {
   Stage.addResizeListener(Castle.draw);
 
   createSlingshot(world);
-  spawnFoals(world);
+
+  spawnFoals(world).forEach((e) =>
+    drawShadow(e.get(DynamicBody).position.add(pt(0, 20))),
+  );
 
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
 

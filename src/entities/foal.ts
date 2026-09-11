@@ -1,4 +1,5 @@
 import type { Entity } from "../ecs";
+import { rgb, rgba } from "../engine/color";
 import { Health, Prey, START_LIVES } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
@@ -17,9 +18,6 @@ export function drawFoal(e: Entity) {
   const spritePos = position;
 
   ctx.translate(spritePos.x, spritePos.y);
-
-  // shadow
-  foalGroove(ctx, e);
 
   drawParts(ctx, foal);
 
@@ -55,20 +53,23 @@ export function drawFoal(e: Entity) {
   ctx.resetTransform();
 }
 
-export function foalGroove(ctx: CanvasRenderingContext2D) {
-  const radii: [number, number] = [181, 175];
+export function drawShadow(position: Point, radius = 60) {
+  const { ctx } = Stage.setActiveLayer(LayerName.BG_3);
+
+  ctx.save();
+  ctx.translate(position.x, position.y);
+
   const shadow = makeGradient(
-    pt(0, 20),
-    pt(0, 20),
-    [BLACK.toAlpha(0), BLACK.toAlpha(0.3)],
-    [60, 15],
+    pt(),
+    pt(),
+    [BLACK.toAlpha(0), BLACK.toAlpha(0.3)], // rgba(19, 131, 19, 1).toAlpha(0.5)
+    [radius, 0],
   );
 
   ctx.fillStyle = shadow;
   ctx.beginPath();
-  ctx.ellipse(0, 0, ...radii, 0, 0, Math.PI * 2);
+  ctx.arc(0, 0, radius, 0, Math.PI * 2);
   ctx.closePath();
-  ctx.save();
   ctx.scale(1, 0.5);
   ctx.fill();
   ctx.restore();

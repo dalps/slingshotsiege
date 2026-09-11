@@ -578,11 +578,12 @@ export class ReloadSystem {
 
 export function spawnFoals(world: World) {
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
-  const width = 0.8;
+  const width = 0.9;
   const offset = cw * (1 - width);
-  distribute(offset, cw * width, 4, (x, idx) => {
+
+  return distribute(offset, cw * width, 4).map((x, idx) =>
     world
       .create()
-      .add(new Prey(), new DynamicBody(pt(x, ch * 0.85)), new Sprite(drawFoal));
-  });
+      .add(new Prey(), new DynamicBody(pt(x, ch * 0.85)), new Sprite(drawFoal)),
+  );
 }

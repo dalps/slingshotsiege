@@ -17,7 +17,7 @@ import {
   sway,
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { PASTEL_RAINBOW } from "../utils/SpriteUtils";
+import { BLACK, PASTEL_RAINBOW } from "../utils/SpriteUtils";
 import {
   Interval,
   Transform,
@@ -35,6 +35,8 @@ export const GAME_TITLE = "Slingshot Siege";
 export const RAINBOW_INTERVAL = 10;
 export const START_LIVES = 3;
 
+export class Position extends Point {}
+
 export class Health {
   lives = START_LIVES;
 }
@@ -43,20 +45,17 @@ export class Prey {
   radius = 40;
 
   constructor(public targeted = true) {}
-
-  // destructor() {
-  //   console.log("Prey killed.");
-  // }
 }
 
 export class Hunter {
   target: Entity | null = null;
   distance: number | null = null;
   speed: number = 20;
+  particeEmitter: Entity | null = null;
 
-  // destructor() {
-  //   console.log("Killed a hunter.");
-  // }
+  destructor() {
+    this.particeEmitter?.delete();
+  }
 }
 
 export const enum WeaponState {
@@ -292,15 +291,37 @@ export class Spawner {
   powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.enemyInterval = Interval(world.create(), 1, () =>
-      world
-        .create()
-        .add(
-          new Hunter(),
-          new DynamicBody(pt(Math.random() * Stage.cw, 0)),
-          new Sprite(drawEnemy),
-        ),
-    );
+    this.enemyInterval = Interval(world.create(), 1, () => {
+      const hunterData = new Hunter();
+      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0));
+
+      world.create().add(hunterData, hunterBody, new Sprite(drawEnemy));
+
+      hunterData.particeEmitter = Interval(world.create(), 1 / 5, () => {
+        const size = lerp(20, 30, Math.random());
+
+        world.create().add(
+          new DynamicBody(hunterBody.position.add(Point.random(pt(), pt(20))), {
+            // startVelocity: pt(lerp(10, 20, Math.random()), 0).rotate(Math.random() * Math.PI * 2),
+          }),
+          FadeTransform(2),
+          new Sprite((e) => {
+            const [{ position: p }, { transparency, scale }]: [
+              DynamicBody,
+              Sprite,
+            ] = e.get(DynamicBody, Sprite);
+            const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
+            ctx.save();
+            ctx.resetTransform();
+            ctx.fillStyle = BLACK.toAlpha(lerp(0.5, 0, transparency));
+
+            // circle(pos, rowSize, color);
+            ctx.fillRect(p.x, p.y, size * scale, size * scale);
+            ctx.restore();
+          }),
+        );
+      });
+    });
 
     this.powerupInterval = Interval(world.create(), 30, () => {
       const dice = Math.random() < 0.5;

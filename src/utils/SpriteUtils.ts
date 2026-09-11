@@ -14,6 +14,8 @@ export const WHITE = rgb(255, 255, 255);
 export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
 export const VIOLET = rgb(94, 50, 147);
+export const DARK_WOOD = "#a96f3c";
+export const LIGHT_WOOD = "#f3c39a";
 
 export const PASTEL_RAINBOW = [
   "#ff49db",

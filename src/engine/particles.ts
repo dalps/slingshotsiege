@@ -1,5 +1,5 @@
 import type { Entity, World } from "../ecs";
-import { DEG2RAD, lerp } from "../utils/MathUtils";
+import { DEG2RAD, easeIn, easeInBack, easeOut, lerp } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Interval, Transform } from "../utils/TimeUtils";
@@ -52,7 +52,7 @@ export const FadeTransform = (duration = 0.5): Transform =>
     update(e, t) {
       const sprite: Sprite = e.get(Sprite);
       sprite.transparency = 1 - t;
-      sprite.scale *= t;
+      sprite.scale = easeIn(1 - t);
     },
   });
 
