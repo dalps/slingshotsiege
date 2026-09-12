@@ -3,25 +3,22 @@ export const enum LayerName {
   Projectiles,
   Unicorn,
   BrickWall,
+  Particles,
   Game,
   Scores,
   UI,
 }
-
-export const titleElements = document.getElementById("title");
-export const gameoverElements = document.getElementById("gameover");
 
 const STACK: LayerName[] = [
   LayerName.Backdrop,
   LayerName.Projectiles,
   LayerName.Unicorn,
   LayerName.BrickWall,
+  LayerName.Particles,
   LayerName.Game,
   LayerName.Scores,
   LayerName.UI,
 ];
-
-let BUTTONS: HTMLButtonElement[];
 
 type LayerKey = string | LayerName;
 

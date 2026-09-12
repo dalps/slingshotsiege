@@ -15,7 +15,11 @@ import { Sprite, Unicorn, UNICORN_EYES } from "./components";
 import { DynamicBody, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
-export function deathParticles(world: World, position: Point) {
+export function explosionParticles(
+  world: World,
+  position: Point,
+  color = BLACK,
+) {
   for (let i = 0; i < 20; i++) {
     const angle = rand(0, 2 * Math.PI);
     const startVelocity = pt(0, 1).rotate(angle).scale(20);
@@ -25,7 +29,7 @@ export function deathParticles(world: World, position: Point) {
         startVelocity,
       }),
       FadeTransform(1 / 3),
-      new Sprite((e) => drawCircle(e, rand(15, 40))),
+      new Sprite((e) => drawCircle(e, rand(15, 40), color)),
     );
   }
 }
@@ -108,19 +112,24 @@ export function drawCircle(e: Entity, radius: number, color = rgb(1, 1, 1)) {
   ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
   ctx.closePath();
 
-  ctx.fillStyle = color.setAlpha(sprite.transparency);
+  ctx.fillStyle = color.toAlpha(sprite.transparency);
   ctx.fill();
 
   // b.debug("magenta");
 }
 
-export function drawSquare(e: Entity, size: number, color = WHITE) {
-  const sprite: Sprite = e.get(Sprite);
-  const b: DynamicBody = e.get(DynamicBody);
-  const { position: p } = b;
+export function drawSquare(
+  e: Entity,
+  size: number,
+  color = WHITE,
+  startAlpha = 1,
+  endAlpha = 0,
+) {
+  const [{ position: p }, { transparency, scale }]: [DynamicBody, Sprite] =
+    e.get(DynamicBody, Sprite);
 
-  const { ctx } = Stage.setActiveLayer(LayerName.Game);
+  const { ctx } = Stage.setActiveLayer(LayerName.Particles);
 
-  ctx.fillStyle = color.setAlpha(sprite.transparency);
-  ctx.fillRect(p.x - size * 0.5, p.y - size * 0.5, size, size);
+  ctx.fillStyle = color.toAlpha(lerp(startAlpha, endAlpha, transparency));
+  ctx.fillRect(p.x - size * 0.5, p.y - size * 0.5, size * scale, size * scale);
 }

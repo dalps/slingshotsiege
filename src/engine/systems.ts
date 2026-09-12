@@ -25,9 +25,20 @@ import {
   Weapon,
   WeaponState,
 } from "./components";
-import { bloodParticles, deathParticles, waterParticles } from "./particles";
+import {
+  bloodParticles,
+  explosionParticles,
+  waterParticles,
+} from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
-import { comboSong, deathSong, gameSong, megaKillSong, sfx } from "./sfx";
+import {
+  comboSong,
+  gameOverSong,
+  megaKillSong,
+  sfx,
+  themeSong1,
+  themeSong2,
+} from "./sfx";
 import { LayerName, Stage } from "./Stage";
 import { zzfxP } from "./zzfx";
 
@@ -123,9 +134,11 @@ export class DamageSystem {
 
         if (health.lives <= 0) {
           zzfxP(sfx.death);
-          // this.bounties.length <= 1 && zzfxP(...endSong);
-
           preyEntity.delete();
+
+          if (this.bounties.length <= 1) {
+            gameCycle.playSong(themeSong2);
+          }
 
           // todo: display carcass sprite
 
@@ -146,20 +159,6 @@ export class DamageSystem {
   }
 }
 
-export class RainbowMovement {
-  rainbows: Query;
-
-  constructor(world: World) {
-    this.rainbows = world.query(Sprite, Rainbow, DynamicBody);
-  }
-
-  update(dt: number) {
-    this.rainbows.iterate((r, rainbowSprite: Sprite) => {
-      rainbowSprite.angle += dt * 0.1;
-    });
-  }
-}
-
 export class RainbowSystem {
   weapons: Query;
   rainbows: Query;
@@ -175,7 +174,9 @@ export class RainbowSystem {
     this.spawners = world.query(Spawner);
   }
 
-  update(dt) {
+  update(dt: number) {
+    this.rainbows.iterate((r) => (r.get(Sprite).angle += dt * 0.1));
+
     this.weapons.iterate((w, weapon: Weapon, weaponBody: DynamicBody) => {
       if (weapon.state !== WeaponState.Fired) return;
 
@@ -186,7 +187,7 @@ export class RainbowSystem {
 
         zzfxP(sfx.explosion);
         zzfxP(...megaKillSong);
-        deathParticles(this.world, rainbowBody.position);
+        explosionParticles(this.world, rainbowBody.position, WHITE);
         r.delete();
 
         // Doesn't increase the score
@@ -215,7 +216,7 @@ export class RainbowSystem {
           this.world
             .query(Frozen, DynamicBody)
             .iterate((h, _, hunterBody: DynamicBody) => {
-              deathParticles(this.world, hunterBody.position);
+              explosionParticles(this.world, hunterBody.position);
               h.delete();
 
               weapon.points += FIRST_KILL_POINTS;
@@ -275,7 +276,7 @@ export class AttackSystem {
             : FIRST_KILL_POINTS;
 
           zzfxP(sfx.explosion);
-          deathParticles(this.world, hunterBody.position);
+          explosionParticles(this.world, hunterBody.position);
           h.delete();
 
           weapon.points += pointsForKill;
@@ -322,6 +323,7 @@ export class Render {
     [
       LayerName.Unicorn,
       LayerName.Projectiles,
+      LayerName.Particles,
       LayerName.Game,
       LayerName.Scores,
     ].forEach((l) => Stage.clearLayer(l));
@@ -458,7 +460,7 @@ export class GameCycle {
 
     // Hide the corner score
     this.score.remove(Sprite);
-    this.currentSong = zzfxP(...deathSong);
+    this.currentSong = zzfxP(...gameOverSong);
     drawText("I failed you, children...", pt(cw * 0.5, ch * 0.2));
 
     await AsyncTimeout(this.world, 2);
@@ -506,10 +508,16 @@ export class GameCycle {
       size: 24,
     });
 
-    ui.onclick = this.startWave.bind(this);
+    ui.onclick = this.startSiege.bind(this);
   }
 
-  startWave() {
+  playSong(song: number[][], loop = true) {
+    this.currentSong?.stop();
+    this.currentSong = zzfxP(...song);
+    this.currentSong.loop = loop;
+  }
+
+  startSiege() {
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
 
@@ -517,9 +525,7 @@ export class GameCycle {
     const { canvas: ui, width: cw, height } = Stage.getLayer(LayerName.UI)!;
     ui.onclick = null;
 
-    this.currentSong?.stop();
-    this.currentSong = zzfxP(...gameSong);
-    this.currentSong.loop = true;
+    this.playSong(themeSong1);
 
     const scoreData: Score = this.score.get(Score);
 
@@ -591,7 +597,7 @@ export class GameCycle {
         await this.playIntro();
       }
 
-      this.startWave();
+      this.startSiege();
     };
   }
 

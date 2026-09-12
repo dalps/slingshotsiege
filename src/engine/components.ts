@@ -24,7 +24,7 @@ import {
   type timestamp,
   type Transformer,
 } from "../utils/TimeUtils";
-import { FadeTransform } from "./particles";
+import { drawSquare, FadeTransform } from "./particles";
 import { DynamicBody } from "./Physics2D";
 import { sfx, zzfxP } from "./sfx";
 import { LayerName, Stage } from "./Stage";
@@ -32,10 +32,9 @@ import { LayerName, Stage } from "./Stage";
 type DrawFn = (entity: Entity) => void;
 
 export const GAME_TITLE = "Slingshot Siege";
-export const RAINBOW_INTERVAL = 10;
 export const START_LIVES = 3;
-
-export class Position extends Point {}
+export const RAINBOW_INTERVAL = 30;
+export const ENEMY_INTERVAL = 1;
 
 export class Health {
   lives = START_LIVES;
@@ -43,8 +42,6 @@ export class Health {
 
 export class Prey {
   radius = 40;
-
-  constructor(public targeted = true) {}
 }
 
 export class Hunter {
@@ -259,7 +256,7 @@ export class Spawner {
   powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.enemyInterval = Interval(world, 1, () => {
+    this.enemyInterval = Interval(world, ENEMY_INTERVAL, () => {
       const hunterData = new Hunter();
       const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0));
 
@@ -269,29 +266,17 @@ export class Spawner {
         const size = rand(20, 30);
 
         world.create().add(
-          new DynamicBody(hunterBody.position.add(Point.random(pt(), pt(20))), {
-            // startVelocity: pt(rand(10, 20), 0).rotate(Math.random() * Math.PI * 2),
-          }),
+          new DynamicBody(
+            hunterBody.position.add(Point.random(pt(), pt(20))),
+            // {startVelocity: pt(rand(10, 20), 0).rotate(Math.random() * Math.PI * 2),}
+          ),
           FadeTransform(2),
-          new Sprite((e) => {
-            const [{ position: p }, { transparency, scale }]: [
-              DynamicBody,
-              Sprite,
-            ] = e.get(DynamicBody, Sprite);
-            const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
-            ctx.save();
-            ctx.resetTransform();
-            ctx.fillStyle = BLACK.toAlpha(lerp(0.5, 0, transparency));
-
-            // circle(pos, rowSize, color);
-            ctx.fillRect(p.x, p.y, size * scale, size * scale);
-            ctx.restore();
-          }),
+          new Sprite((e) => drawSquare(e, size, BLACK, 0.5)),
         );
       });
     });
 
-    this.powerupInterval = Interval(world, 30, () => {
+    this.powerupInterval = Interval(world, RAINBOW_INTERVAL, () => {
       const dice = Math.random() < 0.5;
       const startY = 120;
       const offset = 60;
@@ -306,7 +291,7 @@ export class Spawner {
         .add(
           rainbowData,
           new DynamicBody(pt(startX, startY)),
-          new Sprite((e) => drawRainbow(e, world)),
+          new Sprite(drawRainbow),
         );
 
       const { position }: DynamicBody = rainbow.get(DynamicBody);
@@ -337,17 +322,15 @@ export class Spawner {
                     DynamicBody,
                     Sprite,
                   ] = e.get(DynamicBody, Sprite);
-                  const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
-                  ctx.save();
+                  const { ctx } = Stage.setActiveLayer(LayerName.Particles);
                   const size = lerp(startSize, endSize, 1 - scale);
-                  ctx.fillStyle = color.setAlpha(transparency);
+                  ctx.fillStyle = color.toAlpha(transparency);
                   const pos = pt(
                     p.x - size * 0.5,
                     p.y + PASTEL_RAINBOW.length * size * 0.5 - size * idx,
                   );
                   // circle(pos, rowSize, color);
                   ctx.fillRect(pos.x, pos.y, size, size);
-                  ctx.restore();
                 }),
               );
             });
