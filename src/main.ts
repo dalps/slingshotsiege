@@ -2,7 +2,6 @@ import ecs from "./ecs";
 import {
   DragInput,
   Frozen,
-  Game,
   Health,
   Hunter,
   Prey,
@@ -27,7 +26,7 @@ import {
   ReloadSystem,
   Render,
   spawnFoals,
-  TargetingSystem
+  TargetingSystem,
 } from "./engine/systems";
 import { drawShadow } from "./entities/foal";
 import { drawSlingshotFrame, SlingshotFrame } from "./entities/slingshot";
@@ -54,7 +53,6 @@ registerComponents(
   Frozen,
   Prey,
   Score,
-  Game,
   Spawner,
   DynamicBody,
   SlingshotFrame,
@@ -71,11 +69,11 @@ registerComponents(
 
 const world = createWorld();
 
-const gameCycle = new GameCycle(world);
+export const gameCycle = new GameCycle(world);
 
 function init() {
   Stage.init();
-  Stage.setActiveLayer(LayerName.BG_1);
+  Stage.setActiveLayer(LayerName.Backdrop);
   initGradients();
 
   Castle.draw();
@@ -113,7 +111,7 @@ function init() {
       new Sprite(drawUnicorn),
     );
 
-  // Unicorn animation
+  // Unicorn animation loop
   const unicornBody: DynamicBody = unicorn.get(DynamicBody);
   const { position } = unicornBody;
 
@@ -139,17 +137,18 @@ function init() {
     };
   };
 
-  const p1 = hopToXAndRest(cw - 200, 5, 1);
-  const p2 = hopToXAndRest(200, 5, 1);
+  const limit = lerp(50, 200, Stage.cw / 1000);
+  const p1 = hopToXAndRest(cw - limit, 5, 1);
+  const p2 = hopToXAndRest(limit, 5, 1);
 
   p1.next!.next = p2;
   p2.next!.next = p1;
 
   world.create().add(new Transform(p1));
 
-  const game = world.create().add(new Game());
-
-  gameCycle.menu();
+  // Force a resize before drawing the title
+  window.resizeTo(Stage.cw, Stage.ch);
+  gameCycle.title();
 
   requestAnimationFrame(loop);
 }

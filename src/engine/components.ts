@@ -97,7 +97,7 @@ export class DragInput {
     onmove = (_: Point) => {},
     onclick = (_: Point) => {},
   } = {}) {
-    const uiLayer = Stage.getLayer("ui")!;
+    const uiLayer = Stage.getLayer(LayerName.UI)!;
     const { canvas: ui } = uiLayer;
     this.onmove = onmove;
     this.onclick = onclick;
@@ -231,14 +231,9 @@ export class Unicorn {
 }
 
 export const enum GameState {
-  Menu,
+  Title,
   Ongoing,
   Over,
-}
-
-export class Game {
-  state: GameState = GameState.Menu;
-  wave = 0;
 }
 
 export class Frozen {}
@@ -267,7 +262,7 @@ export class Spawner {
               DynamicBody,
               Sprite,
             ] = e.get(DynamicBody, Sprite);
-            const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
+            const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
             ctx.save();
             ctx.resetTransform();
             ctx.fillStyle = BLACK.toAlpha(lerp(0.5, 0, transparency));
@@ -326,7 +321,7 @@ export class Spawner {
                     DynamicBody,
                     Sprite,
                   ] = e.get(DynamicBody, Sprite);
-                  const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
+                  const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
                   ctx.save();
                   const size = lerp(startSize, endSize, 1 - scale);
                   ctx.fillStyle = color.setAlpha(transparency);

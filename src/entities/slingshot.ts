@@ -177,7 +177,7 @@ export class SlingshotFrame {
 }
 
 export function drawSlingshotFrame(e: Entity) {
-  const { ctx, cw } = Stage.setActiveLayer(LayerName.BG_3);
+  const { ctx, cw } = Stage.setActiveLayer(LayerName.BrickWall);
   const { position, armPos } = e.get(SlingshotFrame) as SlingshotFrame;
 
   drawShadow(position.add(pt(size.x / 2, 0)), 30);
@@ -185,7 +185,15 @@ export function drawSlingshotFrame(e: Entity) {
   ctx.fillStyle = DARK_WOOD;
   ctx.fillRect(position.x, position.y, size.x, -size.y);
   ctx.beginPath();
-  ctx.ellipse(position.x + size.x / 2, position.y, size.x / 2, size.x / 4, 0, 0, Math.PI * 2);
+  ctx.ellipse(
+    position.x + size.x / 2,
+    position.y,
+    size.x / 2,
+    size.x / 4,
+    0,
+    0,
+    Math.PI * 2,
+  );
   ctx.fill();
 
   ctx.translate(cw / 2, armPos.y);
@@ -268,7 +276,7 @@ export function drawWeapon(e: Entity) {
 export function drawFarGoneWeapon(e: Entity) {
   const weaponBody: DynamicBody = e.get(DynamicBody);
 
-  const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
+  const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
   // Stage.clearLayer(LayerName.BG_2);
   const [height, radius] = [60, 6];
   const { position: p, velocity: v } = weaponBody;

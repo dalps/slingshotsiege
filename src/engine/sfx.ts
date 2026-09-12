@@ -23,7 +23,7 @@ export const sfx = {
   tug2: zzfx(...[.5,,89,.02,.04,.01,5,.2114620594137709,1,,-36,,,,,,,.61,.02,,489]), // Blip 1326
 }
 
-export const comboSound = (shift: number) => {
+export const comboSong = (shift: number) => {
   const startNote = 8; // G-1
 
   const notes = [];
@@ -34,7 +34,7 @@ export const comboSound = (shift: number) => {
   zzfxP(...data);
 };
 
-export const megaKillSound = zzfxM(
+export const megaKillSong = zzfxM(
   ...[[[, 0, 440]], [[[, -1, 8, 13, 15, 20, 24, 27, 32]]], [0], 90],
 );
 
@@ -59,12 +59,10 @@ const no10 = [[[.5,0,435,.05,,.2,,,,,,,,,,,.12,,.05,.38],[.4,0,435,.04,.05,.2,,,
 const bpm = 112;
 const makeSong = (...sequence: any[]) => zzfxM(instruments, no5, sequence, bpm);
 
-export const SongLibrary = {
-  game: makeSong(0, 1, 0, 2, 3, 4, 5, 6, 5, 7),
-  game2: makeSong(8, 9, 8, 10, 11, 12, 11, 13),
-  clear: makeSong(14, 15),
-  death: zzfxM(...no10),
-  end: makeSong(0, 2, 16, 17),
-};
+export const gameSong = makeSong(0, 1, 0, 2, 3, 4, 5, 6, 5, 7);
+export const game2Song = makeSong(8, 9, 8, 10, 11, 12, 11, 13);
+export const clearSong = makeSong(14, 15);
+export const deathSong = zzfxM(...no10);
+export const endSong = makeSong(0, 2, 16, 17);
 
 export { zzfxP } from "./zzfx";

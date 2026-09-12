@@ -1,6 +1,6 @@
 import { DEG2RAD, lerp } from "../utils/MathUtils";
 import { Point } from "./Point";
-import { Stage } from "../engine/Stage";
+import { LayerName, Stage } from "../engine/Stage";
 import PALETTE, { hsl, HSLColor } from "../engine/color";
 import { BLACK, WHITE } from "./SpriteUtils";
 
@@ -10,13 +10,14 @@ export function drawText(
   {
     fill = WHITE,
     stroke = BLACK,
-    lineWidth = 1,
+    lineWidth = 2,
     size = 36,
     bold = true,
     centered = true,
+    layer = LayerName.UI,
   } = {},
 ) {
-  const { ctx } = Stage.activeLayer;
+  const { ctx } = Stage.setActiveLayer(layer);
 
   ctx.font = `${bold ? "bold" : "normal"} ${size}px sans-serif`;
   const metrics = ctx.measureText(text);
@@ -29,8 +30,8 @@ export function drawText(
   ctx.fillStyle = fill;
   ctx.strokeStyle = stroke;
   ctx.lineWidth = lineWidth;
-  ctx.fillText(text, x, y);
   ctx.strokeText(text, x, y);
+  ctx.fillText(text, x, y);
 }
 
 export function star(

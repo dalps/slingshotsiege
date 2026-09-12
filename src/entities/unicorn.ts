@@ -10,7 +10,7 @@ export function drawUnicorn(e: Entity) {
   const unicornData: Unicorn = e.get(Unicorn);
   const { position: p }: DynamicBody = e.get(DynamicBody);
 
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_2);
+  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.Projectiles);
 
   const size = pt(200);
   ctx.translate(p.x, p.y);

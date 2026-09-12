@@ -1,6 +1,7 @@
 import { rgb, type Color } from "../engine/color";
 import { LayerName, Stage } from "../engine/Stage";
-import { Point, pt } from "./Point";
+import { makeGradient } from "./CanvasUtils";
+import { pt } from "./Point";
 
 type color = string | Color | undefined | CanvasGradient | Function;
 
@@ -14,16 +15,18 @@ export const WHITE = rgb(255, 255, 255);
 export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
 export const VIOLET = rgb(94, 50, 147);
+export const YELLOW = rgb(179, 255, 0);
 export const DARK_WOOD = "#a96f3c";
 export const LIGHT_WOOD = "#f3c39a";
 
 export const PASTEL_RAINBOW = [
-  "#ff49db",
-  "#bab3ff",
-  "#60f6ff",
-  "#afffaf",
-  "#f3ffa5",
-  "#ff8686",
+  rgb(255, 73, 219),
+  rgb(186, 179, 255),
+  rgb(96, 246, 255),
+  rgb(175, 255, 175),
+  rgb(243, 255, 165),
+  rgb(243, 223, 149),
+  rgb(255, 134, 134),
 ];
 
 export const gradients: Record<string, CanvasGradient> = {};
@@ -41,7 +44,7 @@ export const sprite = (rawData: RawDrawingPart[]): Drawing =>
   );
 
 export function initGradients() {
-  Stage.setActiveLayer(LayerName.BG_1);
+  Stage.setActiveLayer(LayerName.Backdrop);
   // Used for the mane only
   gradients.rainbow = makeGradient(
     pt(),

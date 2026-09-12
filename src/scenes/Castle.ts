@@ -12,7 +12,7 @@ export let skyGradient: CanvasGradient;
  * Draws the game's backdrop.
  */
 function draw() {
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.BG_1);
+  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.Backdrop);
 
   const grassStart = 0.8;
   const wallStart = 0.6;
@@ -56,7 +56,7 @@ function draw() {
 
   {
     // white brick wall
-    const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.BG_3);
+    const { ctx, ch, cw } = Stage.setActiveLayer(LayerName.BrickWall);
     const brickPattern = ctx.createPattern(
       drawBrickPattern(brickSize),
       "repeat",

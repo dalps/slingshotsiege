@@ -41,6 +41,21 @@ export const Timeout = (
     }),
   );
 
+export const AsyncTimeout = (
+  world: World,
+  duration: seconds,
+): Promise<Entity> =>
+  new Promise((resolve, reject) => 
+    world.create().add(
+      new Transform({
+        duration,
+        end(e) {
+          resolve(e);
+        },
+      }),
+    )
+  );
+
 /**
  * Spawns a dummy entity that runs the `end` callback perpetually every `duration` seconds.
  */

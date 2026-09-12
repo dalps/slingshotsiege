@@ -51,7 +51,7 @@ export function drawFoal(e: Entity) {
 }
 
 export function drawShadow(position: Point, radius = 60) {
-  const { ctx } = Stage.setActiveLayer(LayerName.BG_3);
+  const { ctx } = Stage.setActiveLayer(LayerName.BrickWall);
 
   ctx.save();
   ctx.translate(position.x, position.y);
