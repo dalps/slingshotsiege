@@ -2,10 +2,8 @@ import type { Entity, World } from "../ecs";
 import {
   DEG2RAD,
   easeIn,
-  easeInBack,
-  easeOut,
   lerp,
-  rand,
+  rand
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";

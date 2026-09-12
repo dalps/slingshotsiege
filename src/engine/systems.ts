@@ -454,24 +454,27 @@ export class GameCycle {
     );
 
     const ui = Stage.getLayer(LayerName.UI)!.canvas;
+    ui.onclick = null;
 
     await AsyncTimeout(this.world, 2);
 
     // Hide the corner score
     this.score.remove(Sprite);
     this.currentSong = zzfxP(...gameOverSong);
-    drawText("I failed you, children...", pt(cw * 0.5, ch * 0.2));
+    const centerX = cw / 2;
+    drawText("I failed you, children...", pt(centerX, ch * 0.15));
 
     await AsyncTimeout(this.world, 2);
     const totalScore = this.score.get(Score).totalScore;
 
-    drawText("High Scores", pt(cw * 0.5, ch * 0.4), {
+    const highScoresY = ch * 0.3;
+    drawText("High Scores", pt(centerX, highScoresY), {
       size: 28,
       fill: RED,
     });
 
     const text = `Final score: ${totalScore}`;
-    drawText(text, pt(cw * 0.5, ch * 0.7), {
+    drawText(text, pt(centerX, ch * 0.6), {
       size: 28,
       fill: YELLOW,
     });
@@ -480,34 +483,38 @@ export class GameCycle {
     const scoreData: Score = this.score.get(Score);
     const nScores = 5;
     const size = 24;
-    const previousTop5Scores = scoreData.scores
+    let top5Scores = scoreData.scores
       .sort(cmp)
       .slice(0, nScores)
       .map((n) => [n, WHITE]);
 
-    scoreData.saveScore();
+    if (scoreData.totalScore > 0) {
+      scoreData.saveScore();
 
-    const item = [totalScore, YELLOW];
-    const currentTopScoresWithColors = [item, ...previousTop5Scores]
-      .sort((a, b) => cmp(a[0], b[0]))
-      .slice(0, nScores);
+      top5Scores.push([totalScore, YELLOW]);
+      top5Scores = top5Scores.sort((a, b) => cmp(a[0], b[0])).slice(0, nScores);
+    }
 
-    for (let i = 0; i < currentTopScoresWithColors.length; i++) {
-      const [score, fill] = currentTopScoresWithColors[i];
+    for (let i = 0; i < top5Scores.length; i++) {
+      const [score, fill] = top5Scores[i];
       await AsyncTimeout(this.world, 0.5);
-      drawText(`${score}`, pt(cw * 0.5, ch * 0.4 + 10 + (size + 4) * (i + 1)), {
-        size,
-        fill,
-      });
+      drawText(
+        `${score}`,
+        pt(centerX, highScoresY + 10 + (size + 4) * (i + 1)),
+        {
+          size,
+          fill,
+        },
+      );
     }
 
     await AsyncTimeout(this.world, 2);
 
-    drawText("Tap to retry", pt(cw * 0.5, ch * 0.8), {
+    drawText("Tap to retry", pt(centerX, ch * 0.85), {
       size: 24,
     });
 
-    ui.onclick = this.startSiege.bind(this);
+    ui.onclick = ui.ontouchend = this.startSiege.bind(this);
   }
 
   playSong(song: number[][], loop = true) {
@@ -568,18 +575,18 @@ export class GameCycle {
 
     const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
-    drawText(GAME_TITLE, pt(Stage.cw * 0.5, Stage.ch * 0.2), {
+    drawText(GAME_TITLE, pt(Stage.cw / 2, Stage.ch * 0.2), {
       fill: YELLOW,
       lineWidth: 2,
       size: 64,
     });
 
-    drawText("Tap to play", pt(Stage.cw * 0.5, Stage.ch * 0.7));
+    drawText("Tap to play", pt(Stage.cw / 2, Stage.ch * 0.7));
 
     drawText(
       "Made by dalps for js13k 2026",
-      pt(Stage.cw * 0.5, Stage.ch * 0.95),
-      { size: 16 },
+      pt(Stage.cw / 2, Stage.ch * 0.95),
+      { size: 16, fill: "#ccc" },
     );
 
     ui.onclick = async () => {
@@ -604,22 +611,22 @@ export class GameCycle {
     await AsyncTimeout(this.world, 1);
 
     drawText(
-      "Our fortress is under attack by evil specters! >_<",
-      pt(Stage.cw * 0.5, Stage.ch * 0.2),
+      "The fortress is under attack by evil ghosts! >_<",
+      pt(Stage.cw / 2, Stage.ch * 0.2),
     );
 
     await AsyncTimeout(this.world, 2);
 
     drawText(
-      "Will you help unicorn mom defend her babies?",
-      pt(Stage.cw * 0.5, Stage.ch * 0.4),
+      "Help unicorn mom defend her babies!",
+      pt(Stage.cw / 2, Stage.ch * 0.4),
     );
 
     await AsyncTimeout(this.world, 2);
 
     drawText(
-      "Launch her horns towards the wraiths with the slingshot!",
-      pt(Stage.cw * 0.5, Stage.ch * 0.6),
+      "Fire the horns with the slingshot to destroy them.",
+      pt(Stage.cw / 2, Stage.ch * 0.6),
     );
 
     await AsyncTimeout(this.world, 5);

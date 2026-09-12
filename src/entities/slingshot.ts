@@ -5,7 +5,7 @@ import { DynamicBody, GRAVITY } from "../engine/Physics2D";
 import { sfx } from "../engine/sfx";
 import { LayerName, Stage } from "../engine/Stage";
 import { zzfxG, zzfxP } from "../engine/zzfx";
-import { DEG2RAD, lerp, lerp2, orient } from "../utils/MathUtils";
+import { DEG2RAD, lerp, lerp2 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { DARK_WOOD, LIGHT_WOOD, WHITE } from "../utils/SpriteUtils";
 import { Timeout } from "../utils/TimeUtils";
@@ -45,7 +45,7 @@ export class SlingshotFrame {
       new Sprite(drawWeapon),
     );
 
-    zzfxP(sfx.shoot4);
+    zzfxP(sfx.reload);
 
     // this.addDragInput();
   }
@@ -165,12 +165,11 @@ export class SlingshotFrame {
     weaponData.state = WeaponState.Fired;
 
     const t = weaponBody.velocity.abs() / 500;
-    const frequency = lerp(110, 220, t);
-    const slide = lerp(0, 20, t);
-    const deltaSlide = lerp(-50, -10, t);
+    const slide = lerp(-13, -17, t);
 
     // prettier-ignore
-    zzfxP(zzfxG(...[.2,,frequency,.01,.13,.09,,2.5,slide,deltaSlide,,,,,,,,.91,.1]));
+    zzfxP(zzfxG(...[.5,.1,440,.02,.05,.05,,2.3,slide,15,,,,,,,.19,.74,.09,,280])); // Shoot 1364
+    // zzfxP(zzfxG(...[.2,,220,.01,.13,.09,,2.5,slide,-10,,,,,,,,.91,.1]));
     this.weapon = null;
     // this.removeDragInput();
   }

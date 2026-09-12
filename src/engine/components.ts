@@ -18,12 +18,7 @@ import {
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, PASTEL_RAINBOW } from "../utils/SpriteUtils";
-import {
-  Interval,
-  Transform,
-  type timestamp,
-  type Transformer,
-} from "../utils/TimeUtils";
+import { Interval, Transform, type Transformer } from "../utils/TimeUtils";
 import { drawSquare, FadeTransform } from "./particles";
 import { DynamicBody } from "./Physics2D";
 import { sfx, zzfxP } from "./sfx";
@@ -315,7 +310,7 @@ export class Spawner {
         end(e) {
           if (!Rainbow.soundEmitter?.exists)
             Rainbow.soundEmitter = Interval(world, 1 / 3, () =>
-              zzfxP(sfx.rainbow2),
+              zzfxP(sfx.fairy),
             );
 
           const exhaust = new Exhaust(world, 60, () => {
