@@ -40,22 +40,9 @@ export const sprite = (rawData: RawDrawingPart[]): Drawing =>
     ],
   );
 
-export const makeGradient = (
-  from: Point,
-  to: Point,
-  colors: string[],
-  ctx: CanvasRenderingContext2D = Stage.getLayer(LayerName.BG_1)!.ctx,
-) => {
-  let g = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-
-  colors.forEach((s, i) => {
-    g.addColorStop(i / colors.length, s);
-  });
-
-  return g;
-};
-
 export function initGradients() {
+  Stage.setActiveLayer(LayerName.BG_1);
+  // Used for the mane only
   gradients.rainbow = makeGradient(
     pt(),
     pt(Stage.cw, Stage.ch),

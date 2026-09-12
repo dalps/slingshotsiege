@@ -145,7 +145,7 @@ export class SlingshotFrame {
   }
 
   fire() {
-    if (!this.grabPos || !this.weapon?.exists || !this.handle?.exists) return;
+    if (!this.weapon?.exists || !this.handle?.exists) return;
 
     this.grabPos = null;
 

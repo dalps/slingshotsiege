@@ -283,9 +283,10 @@ export class Spawner {
     this.powerupInterval = Interval(world, 30, () => {
       const dice = Math.random() < 0.5;
       const startY = 120;
-      const startX = dice ? -100 : Stage.cw + 100;
-      const swayStartX = dice ? 100 : Stage.cw - 100;
-      const swayEndX = dice ? Stage.cw - 100 : 100;
+      const offset = 60;
+      const startX = dice ? -offset : Stage.cw + offset;
+      const swayStartX = dice ? offset : Stage.cw - offset;
+      const swayEndX = dice ? Stage.cw - offset : offset;
       const exitX = rand(Stage.cw * 0.3, Stage.cw * 0.8);
 
       const rainbowData = new Rainbow();
@@ -313,28 +314,28 @@ export class Spawner {
 
           rainbowData.particleEmitter = Interval(world, 1 / 60, () => {
             PASTEL_RAINBOW.forEach((color, idx) => {
+              const startSize = rand(5, 8);
+              const endSize = rand(10, 13);
               world.create().add(
                 new DynamicBody(position.add(Point.random(pt(), pt(2))), {
                   startVelocity: pt(1, 0).rotate(Math.random() * Math.PI * 2),
                 }),
                 FadeTransform(2),
                 new Sprite((e) => {
-                  const [{ position: p }, { transparency }]: [
+                  const [{ position: p }, { transparency, scale }]: [
                     DynamicBody,
                     Sprite,
                   ] = e.get(DynamicBody, Sprite);
                   const { ctx } = Stage.setActiveLayer(LayerName.BG_2);
                   ctx.save();
-                  ctx.resetTransform();
-                  ctx.globalAlpha = transparency;
-                  const rowSize = 8;
-                  ctx.fillStyle = color;
+                  const size = lerp(startSize, endSize, 1 - scale);
+                  ctx.fillStyle = color.setAlpha(transparency);
                   const pos = pt(
-                    p.x - rowSize * 0.5,
-                    p.y + PASTEL_RAINBOW.length * rowSize * 0.5 - rowSize * idx,
+                    p.x - size * 0.5,
+                    p.y + PASTEL_RAINBOW.length * size * 0.5 - size * idx,
                   );
                   // circle(pos, rowSize, color);
-                  ctx.fillRect(pos.x, pos.y, rowSize, rowSize);
+                  ctx.fillRect(pos.x, pos.y, size, size);
                   ctx.restore();
                 }),
               );
@@ -343,7 +344,7 @@ export class Spawner {
         },
       };
       const swayTransform: Transformer = {
-        duration: 10,
+        duration: lerp(2, 9, Stage.cw / Stage.ch / 2), // * 0.0075,
         update(e, t) {
           position.set(
             lerp(swayStartX, swayEndX, sway(t, iterations)),

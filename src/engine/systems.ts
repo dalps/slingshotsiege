@@ -414,6 +414,7 @@ export class GameCycle {
       this.slingshot.first()!;
 
     // Disable slingshot
+    slingshotData.fire();
     slingshotData.handle.remove(DragInput);
 
     // Stop hunting
