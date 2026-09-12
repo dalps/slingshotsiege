@@ -148,8 +148,24 @@ export class DragInput {
   }
 }
 
+export const RECORDS_KEY = "dalps.siege";
+export const SCORES_KEY = RECORDS_KEY + ".scores";
+export const INTRO_KEY = RECORDS_KEY + ".intro";
+
 export class Score {
   constructor(public totalScore = 0) {}
+
+  get scores(): number[] {
+    const stored = window.localStorage.getItem(SCORES_KEY);
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  saveScore() {
+    window.localStorage.setItem(
+      SCORES_KEY,
+      JSON.stringify([this.totalScore, ...this.scores]),
+    );
+  }
 }
 
 export const enum UnicornEmotion {

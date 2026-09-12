@@ -85,7 +85,7 @@ export class SlingshotFrame {
       new DragInput({
         onclick: this.grabCord.bind(this),
         onmove: this.pullCord.bind(this),
-        onrelease: this.fire.bind(this),
+        onrelease: () => this.grabPos && this.fire(), // The guard prevents firing outside clicking area (GRAB_DISTANCE)
       }),
     );
   }
@@ -250,7 +250,7 @@ export function drawWeapon(e: Entity) {
     DynamicBody,
   );
 
-  const { ctx } = Stage.setActiveLayer(LayerName.Game);
+  const { ctx } = Stage.setActiveLayer(LayerName.Scores);
   const { height, radius } = weaponData;
   const { position: p, velocity: v } = weaponBody;
 

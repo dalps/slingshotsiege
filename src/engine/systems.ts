@@ -5,7 +5,7 @@ import { gameCycle } from "../main";
 import { drawText } from "../utils/CanvasUtils";
 import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { YELLOW } from "../utils/SpriteUtils";
+import { RED, WHITE, YELLOW } from "../utils/SpriteUtils";
 import { AsyncTimeout, Timeout, Transform } from "../utils/TimeUtils";
 import {
   DragInput,
@@ -14,6 +14,7 @@ import {
   GameState,
   Health,
   Hunter,
+  INTRO_KEY as INTRO_DONE_KEY,
   Prey,
   Rainbow,
   Score,
@@ -452,26 +453,54 @@ export class GameCycle {
 
     const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
-    await AsyncTimeout(this.world, 1);
-    this.currentSong = zzfxP(...deathSong);
-
     await AsyncTimeout(this.world, 2);
 
     // Hide the corner score
     this.score.remove(Sprite);
-
-    drawText("I failed you, children...", pt(cw * 0.5, ch * 0.3));
+    this.currentSong = zzfxP(...deathSong);
+    drawText("I failed you, children...", pt(cw * 0.5, ch * 0.2));
 
     await AsyncTimeout(this.world, 2);
-    const text = `Final score: ${this.score.get(Score).totalScore}`;
-    drawText(text, pt(cw * 0.5, ch * 0.4), {
+
+    drawText("High Scores", pt(cw * 0.5, ch * 0.4), {
+      size: 28,
+      fill: RED,
+    });
+
+    const cmp = (a: number, b: number) => b - a;
+    const scoreData: Score = this.score.get(Score);
+    const totalScore = this.score.get(Score).totalScore;
+    const nScores = 5;
+    const size = 24;
+    const previousTop5Scores = scoreData.scores
+      .sort(cmp)
+      .slice(0, nScores)
+      .map((n) => [n, WHITE]);
+
+    scoreData.saveScore();
+
+    const item = [totalScore, YELLOW];
+    const currentTopScoresWithColors = [item, ...previousTop5Scores]
+      .sort((a, b) => cmp(a[0], b[0]))
+      .slice(0, nScores);
+
+    currentTopScoresWithColors.forEach(async ([score, fill], idx) => {
+      await AsyncTimeout(this.world, 0.5);
+      drawText(`${score}`, pt(cw * 0.5, ch * 0.4 + (size + 4) * (idx + 1)), {
+        size,
+        fill,
+      });
+    });
+
+    const text = `Final score: ${totalScore}`;
+    drawText(text, pt(cw * 0.5, ch * 0.7), {
       size: 28,
       fill: YELLOW,
     });
 
     await AsyncTimeout(this.world, 2);
 
-    drawText("Tap to retry", pt(cw * 0.5, ch * 0.7), {
+    drawText("Tap to retry", pt(cw * 0.5, ch * 0.8), {
       size: 24,
     });
 
@@ -548,6 +577,7 @@ export class GameCycle {
 
     ui.onclick = async () => {
       ui.onclick = null;
+
       Stage.clearLayer(LayerName.UI);
 
       // Make mom angry
@@ -555,32 +585,40 @@ export class GameCycle {
         unicornData.getPissed();
       });
 
-      await AsyncTimeout(this.world, 1);
+      if (!window.localStorage.getItem(INTRO_DONE_KEY)) {
+        await this.playIntro();
+      }
 
-      drawText(
-        "Our fortress is under attack by evil specters! >_<",
-        pt(Stage.cw * 0.5, Stage.ch * 0.2),
-      );
-
-      await AsyncTimeout(this.world, 2);
-
-      drawText(
-        "Will you help unicorn mom defend her babies?",
-        pt(Stage.cw * 0.5, Stage.ch * 0.4),
-      );
-
-      await AsyncTimeout(this.world, 2);
-
-      drawText(
-        "Launch her horns towards the wraiths with the slingshot!",
-        pt(Stage.cw * 0.5, Stage.ch * 0.6),
-      );
-
-      await AsyncTimeout(this.world, 5);
-
-      Stage.clearLayer(LayerName.UI);
       this.startWave();
     };
+  }
+
+  async playIntro() {
+    await AsyncTimeout(this.world, 1);
+
+    drawText(
+      "Our fortress is under attack by evil specters! >_<",
+      pt(Stage.cw * 0.5, Stage.ch * 0.2),
+    );
+
+    await AsyncTimeout(this.world, 2);
+
+    drawText(
+      "Will you help unicorn mom defend her babies?",
+      pt(Stage.cw * 0.5, Stage.ch * 0.4),
+    );
+
+    await AsyncTimeout(this.world, 2);
+
+    drawText(
+      "Launch her horns towards the wraiths with the slingshot!",
+      pt(Stage.cw * 0.5, Stage.ch * 0.6),
+    );
+
+    await AsyncTimeout(this.world, 5);
+
+    Stage.clearLayer(LayerName.UI);
+    window.localStorage.setItem(INTRO_DONE_KEY, "1");
   }
 }
 
