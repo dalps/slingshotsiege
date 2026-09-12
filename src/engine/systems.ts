@@ -227,15 +227,16 @@ export class RainbowSystem {
               );
             });
 
+          // Update total score
+          this.world
+            .query(Score)
+            .iterate((e, score: Score) => (score.totalScore += weapon.points));
+
           // Restart spawners
           Timeout(this.world, 1, () =>
             this.world.create().add(new Spawner(this.world)),
           );
         });
-
-        this.world
-          .query(Score)
-          .iterate((e, score: Score) => (score.totalScore += weapon.points));
       });
     });
   }
@@ -461,15 +462,21 @@ export class GameCycle {
     drawText("I failed you, children...", pt(cw * 0.5, ch * 0.2));
 
     await AsyncTimeout(this.world, 2);
+    const totalScore = this.score.get(Score).totalScore;
 
     drawText("High Scores", pt(cw * 0.5, ch * 0.4), {
       size: 28,
       fill: RED,
     });
 
+    const text = `Final score: ${totalScore}`;
+    drawText(text, pt(cw * 0.5, ch * 0.7), {
+      size: 28,
+      fill: YELLOW,
+    });
+
     const cmp = (a: number, b: number) => b - a;
     const scoreData: Score = this.score.get(Score);
-    const totalScore = this.score.get(Score).totalScore;
     const nScores = 5;
     const size = 24;
     const previousTop5Scores = scoreData.scores
@@ -484,19 +491,14 @@ export class GameCycle {
       .sort((a, b) => cmp(a[0], b[0]))
       .slice(0, nScores);
 
-    currentTopScoresWithColors.forEach(async ([score, fill], idx) => {
+    for (let i = 0; i < currentTopScoresWithColors.length; i++) {
+      const [score, fill] = currentTopScoresWithColors[i];
       await AsyncTimeout(this.world, 0.5);
-      drawText(`${score}`, pt(cw * 0.5, ch * 0.4 + (size + 4) * (idx + 1)), {
+      drawText(`${score}`, pt(cw * 0.5, ch * 0.4 + 10 + (size + 4) * (i + 1)), {
         size,
         fill,
       });
-    });
-
-    const text = `Final score: ${totalScore}`;
-    drawText(text, pt(cw * 0.5, ch * 0.7), {
-      size: 28,
-      fill: YELLOW,
-    });
+    }
 
     await AsyncTimeout(this.world, 2);
 
