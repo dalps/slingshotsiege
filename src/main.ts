@@ -1,6 +1,7 @@
 import ecs from "./ecs";
 import {
   DragInput,
+  Exhaust,
   Frozen,
   Health,
   Hunter,
@@ -49,6 +50,7 @@ const { registerComponents, createWorld } = ecs;
 registerComponents(
   Hunter,
   Health,
+  Exhaust,
   Frozen,
   Prey,
   Score,

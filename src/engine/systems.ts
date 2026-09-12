@@ -285,7 +285,6 @@ export class AttackSystem {
           this.world
             .query(Score)
             .iterate((e, score: Score) => (score.totalScore += pointsForKill));
-          weapon.lastKill = now;
 
           showScoreForKill(this.world, weapon.points, hunterBody.position);
         }

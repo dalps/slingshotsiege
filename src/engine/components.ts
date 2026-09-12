@@ -48,11 +48,6 @@ export class Hunter {
   target: Entity | null = null;
   distance: number | null = null;
   speed: number = 20;
-  particleEmitter: Entity | null = null;
-
-  destructor() {
-    this.particleEmitter?.delete();
-  }
 }
 
 export const enum WeaponState {
@@ -62,7 +57,6 @@ export const enum WeaponState {
 }
 
 export class Weapon {
-  lastKill: timestamp = NaN;
   state = WeaponState.Ready;
   points = 0;
   radius = 10;
@@ -251,6 +245,22 @@ export const enum GameState {
 
 export class Frozen {}
 
+export class Exhaust {
+  particleEmitter: Entity | null;
+
+  constructor(
+    world: World,
+    particlesPerSecond: number,
+    draw: Transformer["end"],
+  ) {
+    this.particleEmitter = Interval(world, 1 / particlesPerSecond, draw);
+  }
+
+  destructor() {
+    this.particleEmitter?.exists?.delete();
+  }
+}
+
 export class Spawner {
   enemyInterval: Entity;
   powerupInterval: Entity;
@@ -259,10 +269,7 @@ export class Spawner {
     this.enemyInterval = Interval(world, ENEMY_INTERVAL, () => {
       const hunterData = new Hunter();
       const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0));
-
-      world.create().add(hunterData, hunterBody, new Sprite(drawEnemy));
-
-      hunterData.particleEmitter = Interval(world, 1 / 5, () => {
+      const exhaust = new Exhaust(world, 5, () => {
         const size = rand(20, 30);
 
         world.create().add(
@@ -274,6 +281,10 @@ export class Spawner {
           new Sprite((e) => drawSquare(e, size, BLACK, 0.5)),
         );
       });
+
+      world
+        .create()
+        .add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust);
     });
 
     this.powerupInterval = Interval(world, RAINBOW_INTERVAL, () => {
@@ -285,11 +296,10 @@ export class Spawner {
       const swayEndX = dice ? Stage.cw - offset : offset;
       const exitX = rand(Stage.cw * 0.3, Stage.cw * 0.8);
 
-      const rainbowData = new Rainbow();
       const rainbow = world
         .create()
         .add(
-          rainbowData,
+          new Rainbow(),
           new DynamicBody(pt(startX, startY)),
           new Sprite(drawRainbow),
         );
@@ -308,7 +318,7 @@ export class Spawner {
               zzfxP(sfx.rainbow2),
             );
 
-          rainbowData.particleEmitter = Interval(world, 1 / 60, () => {
+          const exhaust = new Exhaust(world, 60, () => {
             PASTEL_RAINBOW.forEach((color, idx) => {
               const startSize = rand(5, 8);
               const endSize = rand(10, 13);
@@ -326,8 +336,8 @@ export class Spawner {
                   const size = lerp(startSize, endSize, 1 - scale);
                   ctx.fillStyle = color.toAlpha(transparency);
                   const pos = pt(
-                    p.x - size * 0.5,
-                    p.y + PASTEL_RAINBOW.length * size * 0.5 - size * idx,
+                    p.x - size / 2,
+                    p.y + (PASTEL_RAINBOW.length * size) / 2 - size * idx,
                   );
                   // circle(pos, rowSize, color);
                   ctx.fillRect(pos.x, pos.y, size, size);
@@ -335,6 +345,8 @@ export class Spawner {
               );
             });
           });
+
+          rainbow.add(exhaust);
         },
       };
       const swayTransform: Transformer = {
@@ -376,11 +388,9 @@ export class Rainbow {
   innerRadius = RAINBOW_INNER_RADIUS;
   outerRadius = RAINBOW_OUTER_RADIUS;
   radius = 40;
-  particleEmitter: Entity | null = null;
   static soundEmitter: Entity;
 
   destructor() {
-    this.particleEmitter?.delete();
     Rainbow.soundEmitter?.exists?.delete();
   }
 }
