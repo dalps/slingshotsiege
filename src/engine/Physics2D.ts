@@ -115,13 +115,13 @@ export class DynamicBody {
     this.fixed = !this.fixed;
   }
 
-  debug(...colors: (string | null)[]) {
-    [this.velocity, this.acceleration, this.totalForce].forEach(
-      (vector, idx) =>
-        colors[idx] &&
-        popsicle(this.position, this.position.add(vector), colors[idx]),
-    );
-  }
+  // debug(...colors: (string | null)[]) {
+  //   [this.velocity, this.acceleration, this.totalForce].forEach(
+  //     (vector, idx) =>
+  //       colors[idx] &&
+  //       popsicle(this.position, this.position.add(vector), colors[idx]),
+  //   );
+  // }
 }
 
 export class DynamicBodySystem {

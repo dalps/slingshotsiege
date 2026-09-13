@@ -28,7 +28,7 @@ type DrawFn = (entity: Entity) => void;
 
 export const GAME_TITLE = "Slingshot Siege";
 export const START_LIVES = 3;
-export const START_SPEED = 100;
+export const START_SPEED = 50;
 export const RAINBOW_INTERVAL = 30;
 export const ENEMY_INTERVAL = 1;
 
@@ -43,7 +43,8 @@ export class Prey {
 export class Hunter {
   target: Entity | null = null;
   distance: number | null = null;
-  speed: number = 20;
+  direction = pt(0, 1);
+  speed = START_SPEED;
 }
 
 export const enum WeaponState {
@@ -264,7 +265,10 @@ export class Spawner {
   constructor(public world: World) {
     this.enemyInterval = Interval(world, ENEMY_INTERVAL, () => {
       const hunterData = new Hunter();
-      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0));
+
+      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
+        startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
+      });
       const exhaust = new Exhaust(world, 5, () => {
         const size = rand(20, 30);
 

@@ -20,6 +20,7 @@ import {
   Score,
   Spawner,
   Sprite,
+  START_SPEED,
   Unicorn,
   UnicornEmotion,
   Weapon,
@@ -58,9 +59,6 @@ export class TargetingSystem {
 
   update(dt: number) {
     this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
-      hunter.speed =
-        START_SPEED + (gameCycle.score.get(Score) as Score).totalScore * 0.02;
-
       if (hunterBody.position.y > Stage.ch * 1.5) {
         h.delete();
         return;
@@ -75,7 +73,7 @@ export class TargetingSystem {
       }
 
       // Set a new target
-      let candidateTarget = null;
+      let candidateTarget: Entity | null = null;
       let candidateDistance = Infinity;
 
       this.bounties.iterate((b, bounty: Prey, bountyBody: DynamicBody) => {
@@ -89,16 +87,36 @@ export class TargetingSystem {
       if (candidateTarget) {
         hunter.target = candidateTarget as Entity;
         hunter.distance = candidateDistance;
-
-        const direction = hunter.target
-          .getComponent(DynamicBody)!
-          .position.sub(hunterBody.position)
-          .normalize()
-          .scale(hunter.speed);
-
-        damp2I(hunterBody.velocity, direction, 0.6, dt);
-        // hunterBody.velocity = direction;
       }
+    });
+  }
+}
+
+/**
+ * Updates the hunters' velocities with the total score and their direction.
+ */
+export class SpeedSystem {
+  hunters: Query;
+
+  constructor(world: World) {
+    this.hunters = world.query(Hunter, DynamicBody);
+  }
+
+  update(dt: number) {
+    this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
+      hunter.speed =
+        START_SPEED + (gameCycle.score.get(Score) as Score).totalScore * 0.0125;
+
+      if (hunter.target?.exists) {
+        hunter.direction =
+          hunter.target
+            .getComponent(DynamicBody)!
+            .position.sub(hunterBody.position)
+            .normalize()
+            .scale(hunter.speed * 0.1) ?? pt(0, 1);
+      }
+
+      damp2I(hunterBody.velocity, hunter.direction, 0.1, dt);
     });
   }
 }

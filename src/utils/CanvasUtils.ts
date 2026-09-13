@@ -84,19 +84,3 @@ export function circle(p: Point, r: number = 5, color = "blue") {
   ctx.fillStyle = color;
   ctx.fill();
 }
-
-export function imageToBase64(url: string) {
-  const img = new Image();
-  img.src = url;
-
-  img.onload = () => {
-    const { width, height } = img;
-    Stage.newOffscreenLayer("base64ify", width, height);
-    const { ctx, activeLayer } = Stage;
-    // Stage.debugOffscreenLayer("base64ify");
-
-    ctx.drawImage(img, 0, 0);
-    console.log(url);
-    console.log(activeLayer.canvas.toDataURL());
-  };
-}

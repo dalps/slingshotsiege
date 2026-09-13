@@ -26,6 +26,7 @@ import {
   ReloadSystem,
   Render,
   spawnFoals,
+  SpeedSystem,
   TargetingSystem,
 } from "./engine/systems";
 import { drawShadow } from "./entities/foal";
@@ -158,6 +159,7 @@ const pipeline = [
   new DynamicBodySystem(world),
   new TransformSystem(world),
   new TargetingSystem(world),
+  new SpeedSystem(world),
   new AttackSystem(world),
   new DamageSystem(world),
   new ReloadSystem(world),
