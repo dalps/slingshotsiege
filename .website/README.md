@@ -1,19 +1,12 @@
 ---
-directors_cut: https://canvas-demos.dalp.sh/demos/slingshot/
 # See github.com/js13kGames/hello-world for supported frontmatter
 ---
 
-Help unicorn mom defend her slumbering baby foals from the attack of the wraiths! She will load the slingshot in the yard with unicorn horns repurposed as artillery; use it to blow up the evil specters.
+Help unicorn mom protect her slumbering baby foals from a rain of blood-thirsty wraiths!
 
-Aim for a row of enemies to quickly increase your score, and catch the occasional rainbow fairy to blow them all out at once!
+She will load the slingshot in the yard with unicorn horns repurposed as artillery: use it to knock out the enemies and defend the fortress in an endless siege.
 
-Gravity also acts on the weapons, so take that into account for a good aim.
+Aim for a row of wraiths to quickly multiply your points, catch the occasional rainbow fairy to blow them all up at once!
 
 ## Controls
-Click & drag with your mouse, finger or stylus to pull back the slingshot's strips when it's loaded, lift to fire the weapon.
-
-No keyboard input.
-
----
-
-This is a remake of the [Bob-omb Squad](https://www.mariowiki.com/Bob-omb_Squad) Super Mario minigame.
+Click or touch to grab the horn on the slingshot, drag to aim, release to fire.
