@@ -28,6 +28,7 @@ type DrawFn = (entity: Entity) => void;
 
 export const GAME_TITLE = "Slingshot Siege";
 export const START_LIVES = 3;
+export const START_SPEED = 100;
 export const RAINBOW_INTERVAL = 30;
 export const ENEMY_INTERVAL = 1;
 
