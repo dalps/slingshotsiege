@@ -589,8 +589,8 @@ export class GameCycle {
       { size: 16, fill: "#ccc" },
     );
 
-    ui.onclick = async () => {
-      ui.onclick = null;
+    ui.onclick = ui.ontouchend = async () => {
+      ui.onclick = ui.ontouchend = null;
 
       Stage.clearLayer(LayerName.UI);
 
@@ -608,25 +608,29 @@ export class GameCycle {
   }
 
   async playIntro() {
+    const size = 16;
     await AsyncTimeout(this.world, 1);
 
     drawText(
       "The fortress is under attack by evil ghosts! >_<",
       pt(Stage.cw / 2, Stage.ch * 0.2),
+      { size },
     );
 
     await AsyncTimeout(this.world, 2);
 
     drawText(
-      "Help unicorn mom defend her babies!",
+      "Help unicorn mom protect her babies!",
       pt(Stage.cw / 2, Stage.ch * 0.4),
+      { size },
     );
 
     await AsyncTimeout(this.world, 2);
 
     drawText(
-      "Fire the horns with the slingshot to destroy them.",
+      "Shoot her horns with the slingshot to destroy the ghosts.",
       pt(Stage.cw / 2, Stage.ch * 0.6),
+      { size },
     );
 
     await AsyncTimeout(this.world, 5);
