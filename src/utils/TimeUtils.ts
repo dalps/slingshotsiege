@@ -1,4 +1,5 @@
 import type { Entity, Query, World } from "../ecs";
+import { rand } from "./MathUtils";
 
 export type timestamp = DOMHighResTimeStamp;
 export type seconds = number;
@@ -45,7 +46,7 @@ export const AsyncTimeout = (
   world: World,
   duration: seconds,
 ): Promise<Entity> =>
-  new Promise((resolve, reject) => 
+  new Promise((resolve, reject) =>
     world.create().add(
       new Transform({
         duration,
@@ -53,7 +54,7 @@ export const AsyncTimeout = (
           resolve(e);
         },
       }),
-    )
+    ),
   );
 
 /**
@@ -65,6 +66,25 @@ export const Interval = (
   end: Transformer["end"],
 ) => {
   const t = new Transform({ duration, end });
+  t.transformer.next = t.transformer;
+  return world.create().add(t);
+};
+
+/**
+ * Spawns a dummy entity that runs the `end` callback perpetually every `duration` seconds.
+ */
+export const RandomInterval = (
+  world: World,
+  durationFn: () => seconds,
+  endFn: Transformer["end"],
+) => {
+  const t = new Transform({
+    duration: durationFn(),
+    end(e) {
+      t.transformer.duration = durationFn();
+      endFn?.(e);
+    },
+  });
   t.transformer.next = t.transformer;
   return world.create().add(t);
 };

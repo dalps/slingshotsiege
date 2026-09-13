@@ -6,8 +6,10 @@ import {
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
 import { drawWeapon, SlingshotFrame } from "../entities/slingshot";
+import { gameCycle } from "../main";
 import {
   bounce,
+  clamp,
   easeIn,
   easeInBack,
   easeOut,
@@ -18,11 +20,17 @@ import {
 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, PASTEL_RAINBOW } from "../utils/SpriteUtils";
-import { Interval, Transform, type Transformer } from "../utils/TimeUtils";
+import {
+  Interval,
+  RandomInterval,
+  Transform,
+  type Transformer,
+} from "../utils/TimeUtils";
 import { drawSquare, FadeTransform } from "./particles";
 import { DynamicBody } from "./Physics2D";
 import { sfx, zzfxP } from "./sfx";
 import { LayerName, Stage } from "./Stage";
+import { zzfxG } from "./zzfx";
 
 type DrawFn = (entity: Entity) => void;
 
@@ -263,7 +271,12 @@ export class Spawner {
   powerupInterval: Entity;
 
   constructor(public world: World) {
-    this.enemyInterval = Interval(world, ENEMY_INTERVAL, () => {
+    const durationFn = () =>
+      rand(
+        0.5,
+        clamp(1, 2, lerp(2, 1, gameCycle.score.get(Score).totalScore / 60_000)),
+      );
+    this.enemyInterval = RandomInterval(world, durationFn, () => {
       const hunterData = new Hunter();
 
       const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
@@ -281,6 +294,8 @@ export class Spawner {
           new Sprite((e) => drawSquare(e, size, BLACK, 0.5)),
         );
       });
+
+      zzfxP(sfx.spawn);
 
       world
         .create()
