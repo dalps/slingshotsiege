@@ -10,18 +10,17 @@ export function drawUnicorn(e: Entity) {
   const unicornData: Unicorn = e.get(Unicorn);
   const { position: p }: DynamicBody = e.get(DynamicBody);
 
-  const { ctx, cw, ch } = Stage.setActiveLayer(LayerName.Projectiles);
+  Stage.drawOnLayer(LayerName.Unicorn, (ctx) => {
+    const size = pt(200);
+    ctx.translate(p.x, p.y);
+    !unicornData.facingEast && ctx.transform(-1, 0, 0, 1, 0, 0);
+    ctx.translate(-size.x * 0.5, -size.y);
 
-  const size = pt(200);
-  ctx.translate(p.x, p.y);
-  !unicornData.facingEast && ctx.transform(-1, 0, 0, 1, 0, 0);
-  ctx.translate(-size.x * 0.5, -size.y);
+    drawParts(ctx, adult);
+    drawParts(ctx, expressions[unicornData.expression]);
 
-  drawParts(ctx, adult);
-  drawParts(ctx, expressions[unicornData.expression]);
-
-  // ctx.strokeStyle = "green";
-  // ctx.strokeRect(0, 0, size.x, size.y);
-  // circle(p, 5);
-  ctx.resetTransform();
+    // ctx.strokeStyle = "green";
+    // ctx.strokeRect(0, 0, size.x, size.y);
+    // circle(p, 5);
+  });
 }

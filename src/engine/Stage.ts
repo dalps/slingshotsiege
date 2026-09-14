@@ -61,14 +61,14 @@ export class Stage {
    *  The width of the active layer.
    */
   public static get cw(): number {
-    return this.activeLayer.width;
+    return this.stage.clientWidth;
   }
 
   /**
    *  The height of the active layer.
    */
   public static get ch(): number {
-    return this.activeLayer.height;
+    return this.stage.clientHeight;
   }
 
   /**
@@ -113,12 +113,36 @@ export class Stage {
     return newLayer;
   }
 
+  /**
+   * Resizes the canvases to match the stage's dimensions
+   * and scales their contextes to match the device pixel density.
+   *
+   * See https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio
+   */
   static fitLayersToStage() {
+    const scale = window.devicePixelRatio;
     const [cw, ch] = [this.stage.clientWidth, this.stage.clientHeight];
 
-    STACK.forEach((layer) => {
-      this.getLayer(layer)?.setSize(cw, ch);
+    STACK.forEach((name) => {
+      const layer = this.getLayer(name)!;
+
+      layer.canvas.style.width = `${cw}px`;
+      layer.canvas.style.height = `${ch}px`;
+
+      layer.setSize(Math.floor(cw * scale), Math.floor(ch * scale));
+
+      layer.ctx.scale(scale, scale);
     });
+  }
+
+  static drawOnLayer(
+    name: LayerName,
+    drawFn: (ctx: CanvasRenderingContext2D, cw: number, ch: number) => void,
+  ) {
+    const { ctx, cw, ch } = Stage.setActiveLayer(name);
+    ctx.save();
+    drawFn(ctx, cw, ch);
+    ctx.restore();
   }
 
   static debugOffscreenLayer(name: string) {
@@ -145,6 +169,12 @@ export class CanvasHelper {
     this.setSize(width, height);
   }
 
+  /**
+   * Width of the canvas in device pixels.
+   *
+   * WARNING: this is not the same as the Stage's width due to the adjustment performed by `Stage.fitLayersToStage`.
+   * Don't use this for drawing.
+   */
   get width() {
     return this.canvas.width;
   }
@@ -153,6 +183,12 @@ export class CanvasHelper {
     this.canvas.width = w;
   }
 
+  /**
+   * Height of the canvas in device pixels.
+   *
+   * WARNING: this is not the same as the Stage's height due to the adjustment performed by `Stage.fitLayersToStage`.
+   * Don't use this for drawing.
+   */
   get height() {
     return this.canvas.height;
   }

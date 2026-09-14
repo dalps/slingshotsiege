@@ -19,38 +19,38 @@ export function drawRainbow(e: Entity) {
   // Rounded star
   const points = 8;
   const handleLength = -9.5;
-  const { ctx } = Stage.setActiveLayer(LayerName.Game);
   const dphi = (Math.PI * 2) / (points * 2);
 
-  ctx.translate(position.x, position.y);
+  Stage.drawOnLayer(LayerName.Game, (ctx) => {
+    ctx.translate(position.x, position.y);
 
-  let start = pt(1, 0).scale(outerRadius).rotate(angle);
-  ctx.beginPath();
-  ctx.moveTo(start.x, start.y);
+    let start = pt(1, 0).scale(outerRadius).rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(start.x, start.y);
 
-  let lastR = null;
-  for (let i = 0, phi = 0; i <= points * 2; i++, phi += dphi) {
-    const r = pt(Math.cos(phi), Math.sin(phi)).rotate(angle);
-    let p = r.scale(i % 2 === 0 ? outerRadius : innerRadius);
-    // p = p.rotate(angle);
+    let lastR = null;
+    for (let i = 0, phi = 0; i <= points * 2; i++, phi += dphi) {
+      const r = pt(Math.cos(phi), Math.sin(phi)).rotate(angle);
+      let p = r.scale(i % 2 === 0 ? outerRadius : innerRadius);
+      // p = p.rotate(angle);
 
-    let cp1 = (lastR || r).perp().scale(handleLength).add(start);
-    let cp2 = r.perp().scale(-handleLength).add(p);
+      let cp1 = (lastR || r).perp().scale(handleLength).add(start);
+      let cp2 = r.perp().scale(-handleLength).add(p);
 
-    ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p.x, p.y);
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, p.x, p.y);
 
-    lastR = r;
-    start = p;
-  }
+      lastR = r;
+      start = p;
+    }
 
-  ctx.closePath();
+    ctx.closePath();
 
-  ctx.fillStyle = WHITE;
-  ctx.strokeStyle = makeGradient(start, start.scale(-1), PASTEL_RAINBOW);
-  ctx.lineWidth = 7;
-  ctx.fill();
-  ctx.stroke();
+    ctx.fillStyle = WHITE;
+    ctx.strokeStyle = makeGradient(start, start.scale(-1), PASTEL_RAINBOW);
+    ctx.lineWidth = 7;
+    ctx.fill();
+    ctx.stroke();
 
-  drawParts(ctx, rainbowFace);
-  ctx.resetTransform();
+    drawParts(ctx, rainbowFace);
+  });
 }

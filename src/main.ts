@@ -75,16 +75,11 @@ export const gameCycle = new GameCycle(world);
 
 function init() {
   Stage.init();
-  Stage.setActiveLayer(LayerName.Backdrop);
+  
   initGradients();
-
-  Castle.draw();
 
   const slingshot = world.create().add(new SlingshotFrame(world));
   const foals = spawnFoals(world);
-
-  drawSlingshotFrame(slingshot);
-  getFoalPositions().forEach((p) => drawShadow(p.add(pt(0, 20))));
 
   Stage.addResizeListener(
     () => (
@@ -101,7 +96,13 @@ function init() {
     ),
   );
 
+  // Force a resize before drawing the title
+  // window.resizeTo(Stage.cw, Stage.ch);
+
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
+  Castle.draw();
+  drawSlingshotFrame(slingshot);
+  getFoalPositions().forEach((p) => drawShadow(p.add(pt(0, 20))));
 
   const startPosition = pt(200, ch * 0.7);
   const unicornData = new Unicorn();
@@ -148,8 +149,6 @@ function init() {
 
   world.create().add(new Transform(p1));
 
-  // Force a resize before drawing the title
-  window.resizeTo(Stage.cw, Stage.ch);
   gameCycle.title();
 
   requestAnimationFrame(loop);

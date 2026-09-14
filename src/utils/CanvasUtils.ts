@@ -1,7 +1,7 @@
 import { LayerName, Stage } from "../engine/Stage";
 import { HSLColor } from "../engine/color";
 import { lerp } from "../utils/MathUtils";
-import { Point } from "./Point";
+import { Point, pt } from "./Point";
 import { BLACK, WHITE } from "./SpriteUtils";
 
 export function drawText(
@@ -24,7 +24,7 @@ export function drawText(
   const metrics = ctx.measureText(text);
   const margin = 10;
   const center = centered ? 0.5 : 1;
-  const { x, y } = new Point(
+  const { x, y } = pt(
     position.x - metrics.width * center - margin,
     position.y + metrics.actualBoundingBoxAscent * center + margin,
   );

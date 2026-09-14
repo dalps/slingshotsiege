@@ -176,44 +176,43 @@ export class SlingshotFrame {
 }
 
 export function drawSlingshotFrame(e: Entity) {
-  const { ctx, cw } = Stage.setActiveLayer(LayerName.BrickWall);
-  const { position, armPos } = e.get(SlingshotFrame) as SlingshotFrame;
+  Stage.drawOnLayer(LayerName.BrickWall, (ctx, cw) => {
+    const { position, armPos } = e.get(SlingshotFrame) as SlingshotFrame;
 
-  drawShadow(position.add(pt(size.x / 2, 0)), 30);
+    drawShadow(position.add(pt(size.x / 2, 0)), 30);
 
-  ctx.fillStyle = DARK_WOOD;
-  ctx.fillRect(position.x, position.y, size.x, -size.y);
-  ctx.beginPath();
-  ctx.ellipse(
-    position.x + size.x / 2,
-    position.y,
-    size.x / 2,
-    size.x / 4,
-    0,
-    0,
-    Math.PI * 2,
-  );
-  ctx.fill();
-
-  ctx.translate(cw / 2, armPos.y);
-
-  [180 - armAngle / 2, armAngle].forEach((angle) => {
-    ctx.rotate(angle * DEG2RAD);
-    ctx.fillRect(-size.x / 2, 0, size.x, armLength);
-    ctx.fillStyle = LIGHT_WOOD;
-    ctx.beginPath();
-    ctx.ellipse(0, armLength, size.x / 2, size.x / 4, 0, 0, Math.PI * 2);
-    ctx.fill();
     ctx.fillStyle = DARK_WOOD;
+    ctx.fillRect(position.x, position.y, size.x, -size.y);
     ctx.beginPath();
-    ctx.ellipse(0, armLength, size.x / 4, size.x / 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      position.x + size.x / 2,
+      position.y,
+      size.x / 2,
+      size.x / 4,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
+
+    ctx.translate(cw / 2, armPos.y);
+
+    [180 - armAngle / 2, armAngle].forEach((angle) => {
+      ctx.rotate(angle * DEG2RAD);
+      ctx.fillRect(-size.x / 2, 0, size.x, armLength);
+      ctx.fillStyle = LIGHT_WOOD;
+      ctx.beginPath();
+      ctx.ellipse(0, armLength, size.x / 2, size.x / 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = DARK_WOOD;
+      ctx.beginPath();
+      ctx.ellipse(0, armLength, size.x / 4, size.x / 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // circle(anchor1, 5, "white");
+    // circle(anchor2, 5, "white");
   });
-
-  ctx.resetTransform();
-
-  // circle(anchor1, 5, "white");
-  // circle(anchor2, 5, "white");
 }
 
 /**
@@ -223,23 +222,23 @@ function drawSlingshotStrips(e: Entity) {
   const joints: DynamicBody[] = (e.get(ElasticLine) as ElasticLine).joints.map(
     (e) => e.get(DynamicBody),
   );
-  const { ctx } = Stage.setActiveLayer(LayerName.Game);
+  Stage.drawOnLayer(LayerName.Game, (ctx) => {
+    ctx.lineWidth = 5;
+    ctx.lineCap = ctx.lineJoin = "round";
+    ctx.strokeStyle = WHITE;
 
-  ctx.lineWidth = 5;
-  ctx.lineCap = ctx.lineJoin = "round";
-  ctx.strokeStyle = WHITE;
+    ctx.beginPath();
+    ctx.moveTo(joints[0].position.x, joints[0].position.y);
+    joints.forEach((j) => {
+      ctx.lineTo(j.position.x, j.position.y);
+    });
+    ctx.stroke();
 
-  ctx.beginPath();
-  ctx.moveTo(joints[0].position.x, joints[0].position.y);
-  joints.forEach((j) => {
-    ctx.lineTo(j.position.x, j.position.y);
+    // joints.forEach((j) => {
+    // circle(j.position, 5);
+    //   j.debug("magenta", null , "green");
+    // });
   });
-  ctx.stroke();
-
-  // joints.forEach((j) => {
-  // circle(j.position, 5);
-  //   j.debug("magenta", null , "green");
-  // });
 }
 
 export function drawWeapon(e: Entity) {
@@ -249,47 +248,47 @@ export function drawWeapon(e: Entity) {
     DynamicBody,
   );
 
-  const { ctx } = Stage.setActiveLayer(LayerName.Scores);
-  const { height, radius } = weaponData;
-  const { position: p, velocity: v } = weaponBody;
+  Stage.drawOnLayer(LayerName.Scores, (ctx) => {
+    const { height, radius } = weaponData;
+    const { position: p, velocity: v } = weaponBody;
 
-  ctx.translate(p.x, p.y);
-  ctx.rotate(v.angle());
-  ctx.scale(sprite.scale, sprite.scale);
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = "#ccc";
-  ctx.fillStyle = WHITE;
-  ctx.beginPath();
-  ctx.moveTo(-radius, 0);
-  ctx.lineTo(0, -height);
-  ctx.lineTo(radius, 0);
-  ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.resetTransform();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(v.angle());
+    ctx.scale(sprite.scale, sprite.scale);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = "#ccc";
+    ctx.fillStyle = WHITE;
+    ctx.beginPath();
+    ctx.moveTo(-radius, 0);
+    ctx.lineTo(0, -height);
+    ctx.lineTo(radius, 0);
+    ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
 
-  // weaponBody.debug("yellow");
+    // weaponBody.debug("yellow");
+  });
 }
 
 export function drawFarGoneWeapon(e: Entity) {
   const weaponBody: DynamicBody = e.get(DynamicBody);
 
-  const { ctx } = Stage.setActiveLayer(LayerName.Projectiles);
-  // Stage.clearLayer(LayerName.BG_2);
-  const [height, radius] = [60, 6];
-  const { position: p, velocity: v } = weaponBody;
+  Stage.drawOnLayer(LayerName.Projectiles, (ctx) => {
+    // Stage.clearLayer(LayerName.BG_2);
+    const [height, radius] = [60, 6];
+    const { position: p, velocity: v } = weaponBody;
 
-  ctx.translate(p.x, p.y);
-  ctx.rotate(v.angle());
-  ctx.lineWidth = 5;
-  ctx.fillStyle = "#8493a3";
-  ctx.beginPath();
-  ctx.moveTo(-radius, 0);
-  ctx.lineTo(0, -height);
-  ctx.lineTo(radius, 0);
-  ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
-  ctx.closePath();
-  ctx.fill();
-  ctx.resetTransform();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(v.angle());
+    ctx.lineWidth = 5;
+    ctx.fillStyle = "#8493a3";
+    ctx.beginPath();
+    ctx.moveTo(-radius, 0);
+    ctx.lineTo(0, -height);
+    ctx.lineTo(radius, 0);
+    ctx.arcTo(0, radius * 0.5, -radius, 0, radius * 2);
+    ctx.closePath();
+    ctx.fill();
+  });
 }

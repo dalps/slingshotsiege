@@ -16,6 +16,9 @@ export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
 export const VIOLET = rgb(94, 50, 147);
 export const YELLOW = rgb(179, 255, 0);
+export const PINK = "#ff9ec5";
+export const GRAY6 = "#666";
+export const GRAY4 = "#444";
 export const DARK_WOOD = "#a96f3c";
 export const LIGHT_WOOD = "#f3c39a";
 

@@ -549,7 +549,7 @@ export class GameCycle {
       this.slingshot.first()!;
 
     Stage.clearLayer(LayerName.UI);
-    const { canvas: ui, width: cw, height } = Stage.getLayer(LayerName.UI)!;
+    const { canvas: ui } = Stage.getLayer(LayerName.UI)!;
     ui.onclick = null;
 
     this.playSong(themeSong1);
@@ -560,7 +560,7 @@ export class GameCycle {
     scoreData.totalScore = 0;
     this.score.add(
       new Sprite(() =>
-        drawText(`Score ${scoreData.totalScore}`, pt(cw, 0), {
+        drawText(`Score ${scoreData.totalScore}`, pt(Stage.cw, 0), {
           centered: false,
           size: 32,
           layer: LayerName.Scores,
