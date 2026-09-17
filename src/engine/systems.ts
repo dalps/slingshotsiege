@@ -9,6 +9,7 @@ import { RED, WHITE, YELLOW } from "../utils/SpriteUtils";
 import { AsyncTimeout, Timeout, Transform } from "../utils/TimeUtils";
 import {
   DragInput,
+  Exhaust,
   Frozen,
   GAME_TITLE,
   GameState,
@@ -29,6 +30,7 @@ import {
 import {
   bloodParticles,
   explosionParticles,
+  sleepyParticle,
   waterParticles,
 } from "./particles";
 import { DynamicBody, Force } from "./Physics2D";
@@ -697,9 +699,16 @@ export function getFoalPositions(): Point[] {
 }
 
 export function spawnFoals(world: World) {
-  return getFoalPositions().map((x) =>
-    world.create().add(new Prey(), new DynamicBody(x), new Sprite(drawFoal)),
-  );
+  return getFoalPositions().map((x) => {
+    world
+      .create()
+      .add(
+        new Prey(),
+        new DynamicBody(x),
+        new Sprite(drawFoal),
+        new Exhaust(world, 1, () => sleepyParticle(world, x.add(pt(-30)))),
+      );
+  });
 }
 
 // export function drawFoalShadows(foals: Entity[]) {

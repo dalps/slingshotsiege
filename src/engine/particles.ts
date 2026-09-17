@@ -1,10 +1,6 @@
 import type { Entity, World } from "../ecs";
-import {
-  DEG2RAD,
-  easeIn,
-  lerp,
-  rand
-} from "../utils/MathUtils";
+import { drawText } from "../utils/CanvasUtils";
+import { DEG2RAD, easeIn, lerp, rand, sway } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Interval, Transform } from "../utils/TimeUtils";
@@ -62,6 +58,30 @@ export const FadeTransform = (duration = 0.5): Transform =>
       sprite.scale = easeIn(1 - t);
     },
   });
+
+export function sleepyParticle(world: World, position: Point) {
+  const angle = rand(135 * DEG2RAD, 165 * DEG2RAD);
+  const startVelocity = pt(0, 1.5).rotate(angle);
+
+  const body = new DynamicBody(position.clone(), {
+    startVelocity,
+  });
+
+  world.create().add(
+    body,
+    FadeTransform(4),
+    new Sprite((e) => {
+      const { transparency, scale }: Sprite = e.get(Sprite);
+      const alpha = sway(transparency, 2);
+      drawText("Z", body.position, {
+        size: lerp(8, 22, sway(scale, 2)),
+        fill: BLACK.toAlpha(alpha),
+        stroke: WHITE.toAlpha(alpha),
+        layer: LayerName.Scores,
+      });
+    }),
+  );
+}
 
 export function waterParticles(
   world: World,
