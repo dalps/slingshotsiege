@@ -15,6 +15,7 @@ export const WHITE = rgb(255, 255, 255);
 export const BLACK = rgb(0, 0, 0);
 export const RED = "#f00";
 export const VIOLET = rgb(94, 50, 147);
+export const FUCHSIA = rgb(255, 37, 255);
 export const YELLOW = rgb(179, 255, 0);
 export const PINK = "#ff9ec5";
 export const GRAY6 = "#666";
@@ -58,7 +59,7 @@ export function initGradients() {
 
 export function drawParts(ctx: CanvasRenderingContext2D, parts: Drawing) {
   parts.forEach(([path, fill, stroke]) => {
-    const get = (v: any) => (typeof fill === "function" ? v() : v);
+    const get = (v: any) => (typeof v === "function" ? v() : v);
 
     if (fill) {
       ctx.fillStyle = get(fill);

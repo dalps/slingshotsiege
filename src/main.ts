@@ -1,5 +1,6 @@
 import ecs from "./ecs";
 import {
+  Bat,
   DragInput,
   Exhaust,
   Frozen,
@@ -65,6 +66,7 @@ registerComponents(
   Unicorn,
   Transform,
   Sprite,
+  Bat,
 );
 
 // generateSprites();

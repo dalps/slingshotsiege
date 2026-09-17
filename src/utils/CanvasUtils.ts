@@ -1,5 +1,5 @@
 import { LayerName, Stage } from "../engine/Stage";
-import { HSLColor } from "../engine/color";
+import { Color } from "../engine/color";
 import { lerp } from "../utils/MathUtils";
 import { Point, pt } from "./Point";
 import { BLACK, WHITE } from "./SpriteUtils";
@@ -38,7 +38,7 @@ export function drawText(
 export function makeGradient(
   cp1: Point,
   cp2: Point,
-  colors: (HSLColor | string)[],
+  colors: (Color | string)[],
   radii: [number, number] | null = null,
 ) {
   const { ctx } = Stage;

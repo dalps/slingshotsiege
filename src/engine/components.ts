@@ -1,4 +1,5 @@
 import type { Entity, World } from "../ecs";
+import { drawBat, wingFling as wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
 import {
   drawRainbow,
@@ -268,6 +269,7 @@ export class Exhaust {
 
 export class Spawner {
   enemyInterval: Entity;
+  batInterval: Entity;
   powerupInterval: Entity;
 
   constructor(public world: World) {
@@ -276,6 +278,7 @@ export class Spawner {
         0.5,
         clamp(1, 2, lerp(2, 1, gameCycle.score.get(Score).totalScore / 60_000)),
       );
+
     this.enemyInterval = RandomInterval(world, durationFn, () => {
       const hunterData = new Hunter();
 
@@ -300,6 +303,26 @@ export class Spawner {
       world
         .create()
         .add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust);
+    });
+
+    this.batInterval = RandomInterval(world, durationFn, () => {
+      const hunterData = new Hunter();
+
+      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
+        startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
+      });
+
+      zzfxP(sfx.spawn);
+
+      world
+        .create()
+        .add(
+          hunterData,
+          hunterBody,
+          new Sprite(drawBat),
+          new Bat(),
+          new Transform(wingFlap),
+        );
     });
 
     this.powerupInterval = Interval(world, RAINBOW_INTERVAL, () => {
@@ -408,4 +431,8 @@ export class Rainbow {
   destructor() {
     Rainbow.soundEmitter?.exists?.delete();
   }
+}
+
+export class Bat {
+  wingAngle = 0;
 }

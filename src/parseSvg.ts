@@ -7,6 +7,7 @@ export function generateSprites() {
 
     let o = "";
     o += getParts("foal");
+    o += getParts("batLeftWing");
     o += getParts("bat");
     o += getParts("wraith");
     o += getParts("adult");
