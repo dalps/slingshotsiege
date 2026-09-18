@@ -1,37 +1,19 @@
 import type { Entity, World } from "../ecs";
-import { drawBat, wingFling as wingFlap } from "../entities/bat";
-import { drawEnemy } from "../entities/enemy";
 import {
-  drawRainbow,
   RAINBOW_INNER_RADIUS,
   RAINBOW_OUTER_RADIUS,
 } from "../entities/rainbow";
 import { drawWeapon, SlingshotFrame } from "../entities/slingshot";
-import { gameCycle } from "../main";
-import {
-  bounce,
-  clamp,
-  easeIn,
-  easeInBack,
-  easeOut,
-  lerp,
-  lerp2,
-  rand,
-  sway,
-} from "../utils/MathUtils";
+import { easeInBack, lerp, lerp2 } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { BLACK, PASTEL_RAINBOW } from "../utils/SpriteUtils";
 import {
   Interval,
   RandomInterval,
   Transform,
   type Transformer,
 } from "../utils/TimeUtils";
-import { drawSquare, FadeTransform } from "./particles";
 import { DynamicBody } from "./Physics2D";
-import { sfx, zzfxP } from "./sfx";
 import { LayerName, Stage } from "./Stage";
-import { zzfxG } from "./zzfx";
 
 type DrawFn = (entity: Entity) => void;
 
@@ -269,157 +251,21 @@ export class Exhaust {
 }
 
 export class Spawner {
-  enemyInterval: Entity;
-  batInterval: Entity;
-  powerupInterval: Entity;
+  interval: Entity;
 
-  constructor(public world: World) {
-    const durationFn = () =>
-      rand(
-        0.5,
-        clamp(1, 2, lerp(2, 1, gameCycle.score.get(Score).totalScore / 60_000)),
-      );
-
-    this.enemyInterval = RandomInterval(world, durationFn, () => {
-      const hunterData = new Hunter();
-
-      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
-        startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
-      });
-      const exhaust = new Exhaust(world, 5, () => {
-        const size = rand(20, 30);
-
-        world.create().add(
-          new DynamicBody(
-            hunterBody.position.add(Point.random(pt(), pt(20))),
-            // {startVelocity: pt(rand(10, 20), 0).rotate(Math.random() * Math.PI * 2),}
-          ),
-          FadeTransform(2),
-          new Sprite((e) => drawSquare(e, size, BLACK, 0.5)),
-        );
-      });
-
-      zzfxP(sfx.spawn);
-
-      world
-        .create()
-        .add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust);
-    });
-
-    this.batInterval = RandomInterval(world, durationFn, () => {
-      const hunterData = new Hunter();
-
-      const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
-        startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
-      });
-
-      zzfxP(sfx.spawn);
-
-      world
-        .create()
-        .add(
-          hunterData,
-          hunterBody,
-          new Sprite(drawBat),
-          new Bat(),
-          new Transform(wingFlap),
-        );
-    });
-
-    this.powerupInterval = Interval(world, RAINBOW_INTERVAL, () => {
-      const dice = Math.random() < 0.5;
-      const startY = 120;
-      const offset = 60;
-      const startX = dice ? -offset : Stage.cw + offset;
-      const swayStartX = dice ? offset : Stage.cw - offset;
-      const swayEndX = dice ? Stage.cw - offset : offset;
-      const exitX = rand(Stage.cw * 0.3, Stage.cw * 0.8);
-
-      const rainbow = world
-        .create()
-        .add(
-          new Rainbow(),
-          new DynamicBody(pt(startX, startY)),
-          new Sprite(drawRainbow),
-        );
-
-      const { position }: DynamicBody = rainbow.get(DynamicBody);
-
-      const iterations = 3; // must be odd
-      const enterTransform: Transformer = {
-        duration: 1,
-        update(e, t) {
-          position.set(lerp(startX, swayStartX, easeOut(t)), startY);
-        },
-        end(e) {
-          if (!Rainbow.soundEmitter?.exists)
-            Rainbow.soundEmitter = Interval(world, 1 / 3, () =>
-              zzfxP(sfx.fairy),
-            );
-
-          const exhaust = new Exhaust(world, 60, () => {
-            PASTEL_RAINBOW.forEach((color, idx) => {
-              const startSize = rand(5, 8);
-              const endSize = rand(10, 13);
-              world.create().add(
-                new DynamicBody(position.add(Point.random(pt(), pt(2))), {
-                  startVelocity: pt(1, 0).rotate(Math.random() * Math.PI * 2),
-                }),
-                FadeTransform(2),
-                new Sprite((e) => {
-                  const [{ position: p }, { transparency, scale }]: [
-                    DynamicBody,
-                    Sprite,
-                  ] = e.get(DynamicBody, Sprite);
-                  const { ctx } = Stage.setActiveLayer(LayerName.Particles);
-                  const size = lerp(startSize, endSize, 1 - scale);
-                  ctx.fillStyle = color.toAlpha(transparency);
-                  const pos = pt(
-                    p.x - size / 2,
-                    p.y + (PASTEL_RAINBOW.length * size) / 2 - size * idx,
-                  );
-                  // circle(pos, rowSize, color);
-                  ctx.fillRect(pos.x, pos.y, size, size);
-                }),
-              );
-            });
-          });
-
-          rainbow.add(exhaust);
-        },
-      };
-      const swayTransform: Transformer = {
-        duration: lerp(2, 9, Stage.cw / Stage.ch / 2), // * 0.0075,
-        update(e, t) {
-          position.set(
-            lerp(swayStartX, swayEndX, sway(t, iterations)),
-            startY - bounce(t, iterations, 50),
-          );
-        },
-      };
-      const exitTransform: Transformer = {
-        duration: 1,
-        update(e, t) {
-          position.set(
-            lerp(swayEndX, exitX, easeIn(t)),
-            lerp(startY, -100, easeInBack(t)),
-          );
-        },
-        end(e) {
-          e.delete();
-          Rainbow.soundEmitter?.delete();
-        },
-      };
-
-      enterTransform.next = swayTransform;
-      swayTransform.next = exitTransform;
-      rainbow.add(new Transform(enterTransform));
-    });
+  constructor(
+    public world: World,
+    duration: number | (() => number),
+    spawnFn: (world: World) => void,
+  ) {
+    this.interval =
+      typeof duration === "function"
+        ? RandomInterval(world, duration, () => spawnFn(world))
+        : Interval(world, duration, () => spawnFn(world));
   }
 
   destructor() {
-    this.enemyInterval.delete();
-    this.powerupInterval.delete();
+    this.interval.delete();
   }
 }
 

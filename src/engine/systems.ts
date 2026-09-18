@@ -1,13 +1,41 @@
 import { World, type Entity, type Query } from "../ecs";
+import { drawBat, wingFling } from "../entities/bat";
+import { drawEnemy } from "../entities/enemy";
 import { drawFoal, trembleTransform } from "../entities/foal";
+import { drawRainbow } from "../entities/rainbow";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { gameCycle } from "../main";
 import { drawText } from "../utils/CanvasUtils";
-import { damp2I, distribute, RAD2DEG } from "../utils/MathUtils";
-import { Point, pt } from "../utils/Point";
-import { RED, WHITE, YELLOW } from "../utils/SpriteUtils";
-import { AsyncTimeout, Timeout, Transform } from "../utils/TimeUtils";
 import {
+  bounce,
+  clamp,
+  damp2I,
+  distribute,
+  easeIn,
+  easeInBack,
+  easeOut,
+  lerp,
+  RAD2DEG,
+  rand,
+  sway,
+} from "../utils/MathUtils";
+import { Point, pt } from "../utils/Point";
+import {
+  BLACK,
+  PASTEL_RAINBOW,
+  RED,
+  WHITE,
+  YELLOW,
+} from "../utils/SpriteUtils";
+import {
+  AsyncTimeout,
+  Interval,
+  Timeout,
+  Transform,
+  type Transformer,
+} from "../utils/TimeUtils";
+import {
+  Bat,
   DragInput,
   Exhaust,
   Frozen,
@@ -18,6 +46,7 @@ import {
   INTRO_KEY as INTRO_DONE_KEY,
   Prey,
   Rainbow,
+  RAINBOW_INTERVAL,
   Score,
   Spawner,
   Sprite,
@@ -29,7 +58,9 @@ import {
 } from "./components";
 import {
   bloodParticles,
+  drawSquare,
   explosionParticles,
+  FadeTransform,
   sleepyParticle,
   waterParticles,
 } from "./particles";
@@ -257,9 +288,7 @@ export class RainbowSystem {
             .iterate((e, score: Score) => (score.totalScore += weapon.points));
 
           // Restart spawners
-          Timeout(this.world, 1, () =>
-            this.world.create().add(new Spawner(this.world)),
-          );
+          Timeout(this.world, 1, () => gameCycle.createSpawners());
         });
       });
     });
@@ -443,6 +472,14 @@ export class GameCycle {
     }
   }
 
+  createSpawners() {
+    this.world.create().add(new Spawner(this.world, durationFn, spawnWraith));
+    this.world.create().add(new Spawner(this.world, 10, spawnBat));
+    this.world
+      .create()
+      .add(new Spawner(this.world, RAINBOW_INTERVAL, spawnRainbow));
+  }
+
   async gameOver() {
     this.gameState = GameState.Over;
     this.currentSong?.stop();
@@ -574,7 +611,7 @@ export class GameCycle {
     slingshotData.addDragInput();
 
     // Setup spawners
-    this.world.create().add(new Spawner(this.world));
+    this.createSpawners();
 
     // Recreate foals and restore health
     this.preys.length <= 0 && spawnFoals(this.world);
@@ -699,7 +736,7 @@ export function getFoalPositions(): Point[] {
 }
 
 export function spawnFoals(world: World) {
-  return getFoalPositions().map((x) => {
+  return getFoalPositions().map((x) =>
     world
       .create()
       .add(
@@ -707,8 +744,8 @@ export function spawnFoals(world: World) {
         new DynamicBody(x),
         new Sprite(drawFoal),
         new Exhaust(world, 1, () => sleepyParticle(world, x.add(pt(-30)))),
-      );
-  });
+      ),
+  );
 }
 
 // export function drawFoalShadows(foals: Entity[]) {
@@ -716,3 +753,140 @@ export function spawnFoals(world: World) {
 //     (e) => e.exists && drawShadow(e.get(DynamicBody).position.add(pt(0, 20))),
 //   );
 // }
+
+export function spawnRainbow(world: World) {
+  const dice = Math.random() < 0.5;
+  const startY = 120;
+  const offset = 60;
+  const startX = dice ? -offset : Stage.cw + offset;
+  const swayStartX = dice ? offset : Stage.cw - offset;
+  const swayEndX = dice ? Stage.cw - offset : offset;
+  const exitX = rand(Stage.cw * 0.3, Stage.cw * 0.8);
+
+  const rainbow = world
+    .create()
+    .add(
+      new Rainbow(),
+      new DynamicBody(pt(startX, startY)),
+      new Sprite(drawRainbow),
+    );
+
+  const { position }: DynamicBody = rainbow.get(DynamicBody);
+
+  const iterations = 3; // must be odd
+  const enterTransform: Transformer = {
+    duration: 1,
+    update(e, t) {
+      position.set(lerp(startX, swayStartX, easeOut(t)), startY);
+    },
+    end(e) {
+      if (!Rainbow.soundEmitter?.exists)
+        Rainbow.soundEmitter = Interval(world, 1 / 3, () => zzfxP(sfx.fairy));
+
+      const exhaust = new Exhaust(world, 60, () => {
+        PASTEL_RAINBOW.forEach((color, idx) => {
+          const startSize = rand(5, 8);
+          const endSize = rand(10, 13);
+          world.create().add(
+            new DynamicBody(position.add(Point.random(pt(), pt(2))), {
+              startVelocity: pt(1, 0).rotate(Math.random() * Math.PI * 2),
+            }),
+            FadeTransform(2),
+            new Sprite((e) => {
+              const [{ position: p }, { transparency, scale }]: [
+                DynamicBody,
+                Sprite,
+              ] = e.get(DynamicBody, Sprite);
+              const { ctx } = Stage.setActiveLayer(LayerName.Particles);
+              const size = lerp(startSize, endSize, 1 - scale);
+              ctx.fillStyle = color.toAlpha(transparency);
+              const pos = pt(
+                p.x - size / 2,
+                p.y + (PASTEL_RAINBOW.length * size) / 2 - size * idx,
+              );
+              // circle(pos, rowSize, color);
+              ctx.fillRect(pos.x, pos.y, size, size);
+            }),
+          );
+        });
+      });
+
+      rainbow.add(exhaust);
+    },
+  };
+  const swayTransform: Transformer = {
+    duration: lerp(2, 9, Stage.cw / Stage.ch / 2), // * 0.0075,
+    update(e, t) {
+      position.set(
+        lerp(swayStartX, swayEndX, sway(t, iterations)),
+        startY - bounce(t, iterations, 50),
+      );
+    },
+  };
+  const exitTransform: Transformer = {
+    duration: 1,
+    update(e, t) {
+      position.set(
+        lerp(swayEndX, exitX, easeIn(t)),
+        lerp(startY, -100, easeInBack(t)),
+      );
+    },
+    end(e) {
+      e.delete();
+      Rainbow.soundEmitter?.delete();
+    },
+  };
+
+  enterTransform.next = swayTransform;
+  swayTransform.next = exitTransform;
+  rainbow.add(new Transform(enterTransform));
+}
+
+export function spawnBat(world: World) {
+  const hunterData = new Hunter();
+
+  const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
+    startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
+  });
+
+  zzfxP(sfx.spawn);
+
+  world
+    .create()
+    .add(
+      hunterData,
+      hunterBody,
+      new Sprite(drawBat),
+      new Bat(),
+      new Transform(wingFling),
+    );
+}
+
+export function spawnWraith(world: World) {
+  const hunterData = new Hunter();
+
+  const hunterBody = new DynamicBody(pt(Math.random() * Stage.cw, 0), {
+    startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
+  });
+  const exhaust = new Exhaust(world, 5, () => {
+    const size = rand(20, 30);
+
+    world
+      .create()
+      .add(
+        new DynamicBody(hunterBody.position.add(Point.random(pt(), pt(20)))),
+        FadeTransform(2),
+        new Sprite((e) => drawSquare(e, size, BLACK, 0.5)),
+      );
+  });
+
+  zzfxP(sfx.spawn);
+
+  world.create().add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust);
+}
+
+const durationFn = () =>
+  rand(
+    0.5,
+    clamp(1, 2, lerp(2, 1, gameCycle.score.get(Score).totalScore / 60_000)),
+  );
