@@ -1,5 +1,5 @@
 import { World, type Entity, type Query } from "../ecs";
-import { drawBat, wingFling } from "../entities/bat";
+import { drawBat, FLAP_INTERVAL, wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
 import { drawFoal, trembleTransform } from "../entities/foal";
 import { drawRainbow } from "../entities/rainbow";
@@ -55,6 +55,7 @@ import {
   UnicornEmotion,
   Weapon,
   WeaponState,
+  Wraith,
 } from "./components";
 import {
   bloodParticles,
@@ -64,7 +65,7 @@ import {
   sleepyParticle,
   waterParticles,
 } from "./particles";
-import { DynamicBody, Force } from "./Physics2D";
+import { ContactForce, DynamicBody, Force, GRAVITY } from "./Physics2D";
 import {
   comboSong,
   gameOverSong,
@@ -76,6 +77,7 @@ import {
 import { LayerName, Stage } from "./Stage";
 import { zzfxP } from "./zzfx";
 
+const BAT_INTERVAL = 10;
 const FIRST_KILL_POINTS = 100;
 
 /**
@@ -128,15 +130,15 @@ export class TargetingSystem {
 /**
  * Updates the hunters' velocities with the total score and their direction.
  */
-export class SpeedSystem {
-  hunters: Query;
+export class WraithMotion {
+  wraiths: Query;
 
   constructor(world: World) {
-    this.hunters = world.query(Hunter, DynamicBody);
+    this.wraiths = world.query(Hunter, DynamicBody, Wraith);
   }
 
   update(dt: number) {
-    this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
+    this.wraiths.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
       hunter.speed =
         START_SPEED + (gameCycle.score.get(Score) as Score).totalScore * 0.0125;
 
@@ -474,7 +476,7 @@ export class GameCycle {
 
   createSpawners() {
     this.world.create().add(new Spawner(this.world, durationFn, spawnWraith));
-    this.world.create().add(new Spawner(this.world, 10, spawnBat));
+    this.world.create().add(new Spawner(this.world, BAT_INTERVAL, spawnBat));
     this.world
       .create()
       .add(new Spawner(this.world, RAINBOW_INTERVAL, spawnRainbow));
@@ -851,6 +853,15 @@ export function spawnBat(world: World) {
 
   zzfxP(sfx.spawn);
 
+  const batData = new Bat();
+  const magnitude = 52;
+
+  batData.velocityNoise = Interval(world, FLAP_INTERVAL, () => {
+    hunterBody.addForce(new ContactForce(pt(0, -1), magnitude, 1));
+  });
+
+  hunterBody.addForce(GRAVITY);
+
   world
     .create()
     .add(
@@ -858,7 +869,7 @@ export function spawnBat(world: World) {
       hunterBody,
       new Sprite(drawBat),
       new Bat(),
-      new Transform(wingFling),
+      new Transform(wingFlap),
     );
 }
 
@@ -882,7 +893,9 @@ export function spawnWraith(world: World) {
 
   zzfxP(sfx.spawn);
 
-  world.create().add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust);
+  world
+    .create()
+    .add(hunterData, hunterBody, new Sprite(drawEnemy), exhaust, new Wraith());
 }
 
 const durationFn = () =>

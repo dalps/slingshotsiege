@@ -2,13 +2,17 @@ import type { Entity } from "../ecs";
 import { Bat, Hunter } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
+import { popsicle } from "../utils/CanvasUtils";
 import { bounce, DEG2RAD } from "../utils/MathUtils";
+import { pt } from "../utils/Point";
 import { drawParts } from "../utils/SpriteUtils";
 import type { Transformer } from "../utils/TimeUtils";
 import { bat, batLeftWing } from "./sprites";
 
-export const wingFling: Transformer = {
-  duration: 0.2,
+export const FLAP_INTERVAL = 0.5;
+
+export const wingFlap: Transformer = {
+  duration: FLAP_INTERVAL,
   update(e, stage) {
     const batData: Bat | null = e.get(Bat);
     batData &&
@@ -16,7 +20,7 @@ export const wingFling: Transformer = {
   },
 };
 
-wingFling.next = wingFling;
+wingFlap.next = wingFlap;
 
 export function drawBat(e: Entity) {
   Stage.drawOnLayer(LayerName.Game, (ctx) => {
@@ -30,7 +34,7 @@ export function drawBat(e: Entity) {
     // circle(position, 5);
     const p = position;
     ctx.translate(p.x, p.y);
-    ctx.rotate(velocity.angle() + Math.PI);
+    ctx.rotate(hunterData ? hunterData.direction.angle() + Math.PI : 0);
 
     // The wings
     {
@@ -58,9 +62,8 @@ export function drawBat(e: Entity) {
     ctx.clip(bat[eyes][0]);
     ctx.stroke(bat[body][0]);
     ctx.restore();
+
+    // popsicle(pt(), hunterBody.acceleration, "aliceblue");
+    // popsicle(pt(), velocity, "green");
   });
-
-  // circle(position, 5);
-
-  // popsicle(position, position.add(velocity), "green");
 }

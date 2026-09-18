@@ -1,5 +1,6 @@
 import type { Query, World } from "../ecs";
 import { popsicle } from "../utils/CanvasUtils";
+import { damp } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 
 /**
@@ -49,6 +50,21 @@ export class Pull extends Force {
   }
 }
 
+/**
+ * A force that lasts a very short amount of time
+ */
+export class ContactForce extends Force {
+  static EPSILON = 0.000001;
+
+  constructor(
+    direction: Point,
+    magnitude: number,
+    public lambda = 1,
+  ) {
+    super(direction, magnitude);
+  }
+}
+
 export class DynamicBody {
   public name?: string;
   public position: Point;
@@ -60,7 +76,7 @@ export class DynamicBody {
   public locks = { x: false, y: false };
   public fixed = false;
 
-  private _forces: Force[] = [];
+  _forces: Force[] = [];
   private _aux = pt(0, 0);
 
   constructor(
@@ -142,6 +158,15 @@ export class DynamicBodySystem {
         fixed,
         locks: { x: lockedX, y: lockedY },
       } = body;
+
+      // Update contact forces
+      body._forces.forEach((f) => {
+        if (!(f instanceof ContactForce)) return;
+        f._magnitude =
+          f._magnitude <= ContactForce.EPSILON
+            ? 0
+            : damp(f._magnitude, 0, f.lambda, dt);
+      });
 
       const o = orientation + angularVelocity * dt;
       body.orientation = o > Math.PI * 2 ? 0 : o;

@@ -13,6 +13,7 @@ import {
   Sprite,
   Unicorn,
   Weapon,
+  Wraith,
 } from "./engine/components";
 import { ElasticLine } from "./engine/ElasticLine";
 import { DynamicBody, DynamicBodySystem } from "./engine/Physics2D";
@@ -27,12 +28,13 @@ import {
   ReloadSystem,
   Render,
   spawnFoals,
-  SpeedSystem,
+  WraithMotion,
   TargetingSystem,
 } from "./engine/systems";
 import { drawShadow } from "./entities/foal";
 import { drawSlingshotFrame, SlingshotFrame } from "./entities/slingshot";
 import { drawUnicorn } from "./entities/unicorn";
+import { generateSprites } from "./parseSvg";
 import { Castle } from "./scenes/Castle";
 import { bounce, lerp } from "./utils/MathUtils";
 import { pt } from "./utils/Point";
@@ -66,10 +68,9 @@ registerComponents(
   Unicorn,
   Transform,
   Sprite,
+  Wraith,
   Bat,
 );
-
-// generateSprites();
 
 const world = createWorld();
 
@@ -77,7 +78,7 @@ export const gameCycle = new GameCycle(world);
 
 function init() {
   Stage.init();
-  
+
   initGradients();
 
   const slingshot = world.create().add(new SlingshotFrame(world));
@@ -160,7 +161,7 @@ const pipeline = [
   new DynamicBodySystem(world),
   new TransformSystem(world),
   new TargetingSystem(world),
-  new SpeedSystem(world),
+  new WraithMotion(world),
   new AttackSystem(world),
   new DamageSystem(world),
   new ReloadSystem(world),

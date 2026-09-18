@@ -280,6 +280,13 @@ export class Rainbow {
   }
 }
 
+export class Wraith {}
+
 export class Bat {
   wingAngle = 0;
+  velocityNoise: Entity | null = null;
+
+  destructor() {
+    this.velocityNoise?.exists?.delete();
+  }
 }
