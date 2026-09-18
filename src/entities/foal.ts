@@ -1,21 +1,42 @@
 import type { Entity } from "../ecs";
-import { Health, START_LIVES } from "../engine/components";
+import { Health, Sprite, START_LIVES } from "../engine/components";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { makeGradient } from "../utils/CanvasUtils";
 import { distribute } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
-import { BLACK, drawParts, GRAY4, GRAY6, PINK } from "../utils/SpriteUtils";
+import {
+  BLACK,
+  drawParts,
+  GRAY4,
+  GRAY6,
+  PINK
+} from "../utils/SpriteUtils";
+import type { Transformer } from "../utils/TimeUtils";
 import { foal, life } from "./sprites";
+
+export const trembleTransform: Transformer = {
+  duration: 0.2,
+  update(e, t) {
+    const sprite: Sprite = e.get(Sprite);
+    const width = 20;
+    sprite.translation = pt(Math.sin(t * 4 * Math.PI) * width, 0);
+  },
+  end(e) {
+    const sprite: Sprite = e.get(Sprite);
+    sprite.translation = pt();
+  },
+};
 
 export function drawFoal(e: Entity) {
   Stage.drawOnLayer(LayerName.Game, (ctx) => {
-    const [health, foalBody]: [Health, DynamicBody] = e.get(
+    const [health, foalBody, sprite]: [Health, DynamicBody, Sprite] = e.get(
       Health,
       DynamicBody,
+      Sprite,
     );
     const { position } = foalBody;
-    const spritePos = position;
+    const spritePos = position.add(sprite.translation);
 
     ctx.translate(spritePos.x, spritePos.y);
 

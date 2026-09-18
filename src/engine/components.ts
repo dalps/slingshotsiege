@@ -73,6 +73,7 @@ export class Sprite {
   transparency = 1;
   scale = 1;
   angle = 0;
+  translation = pt();
 
   constructor(public draw: DrawFn) {}
 }

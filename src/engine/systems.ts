@@ -1,5 +1,5 @@
 import { World, type Entity, type Query } from "../ecs";
-import { drawFoal } from "../entities/foal";
+import { drawFoal, trembleTransform } from "../entities/foal";
 import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
 import { gameCycle } from "../main";
 import { drawText } from "../utils/CanvasUtils";
@@ -153,7 +153,7 @@ export class DamageSystem {
         health.lives = Math.max(0, health.lives - 1);
         bloodParticles(this.world, preyBody.position);
         zzfxP(sfx.damage);
-        // todo: violently shake
+        preyEntity.add(new Transform(trembleTransform));
 
         if (health.lives <= 0) {
           zzfxP(sfx.death);
