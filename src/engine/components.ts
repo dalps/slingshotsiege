@@ -64,6 +64,10 @@ type DragEventHandler = (pointerPos: Point) => void;
 
 export class DragInput {
   /**
+   * Current pointer position in the UI
+   */
+  pointerPos: Point | null = null;
+  /**
    * Non-null when dragging.
    */
   dragPos: Point | null = null;
@@ -90,8 +94,12 @@ export class DragInput {
 
     const handleMove = (resolve: (e: Event) => Point) => (e: Event) => {
       e.preventDefault();
+
+      const p = resolve(e);
+      this.pointerPos = p;
+
       if (!this.dragPos || e.buttons === 0) return;
-      this.onmove((this.dragPos = resolve(e)));
+      this.onmove((this.dragPos = p));
     };
 
     const handleRelease = (e: Event) => {
@@ -124,6 +132,7 @@ export class DragInput {
       ui.removeEventListener("touchstart", ui.ontouchstart!);
       ui.removeEventListener("touchmove", ui.ontouchmove!);
       ui.removeEventListener("touchend", ui.ontouchend!);
+      ui.style.cursor = "default";
     };
   }
 }

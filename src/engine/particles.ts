@@ -3,7 +3,7 @@ import { drawText } from "../utils/CanvasUtils";
 import { DEG2RAD, easeIn, lerp, rand, sway } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
-import { Interval, Transform } from "../utils/TimeUtils";
+import { Interval, Transform, type Transformer } from "../utils/TimeUtils";
 import { rgb } from "./color";
 import { Sprite, Unicorn, UNICORN_EYES } from "./components";
 import { DynamicBody, GRAVITY } from "./Physics2D";
@@ -61,7 +61,7 @@ export const FadeTransform = (duration = 0.5): Transform =>
 
 export function sleepyParticle(world: World, position: Point) {
   const angle = rand(135 * DEG2RAD, 165 * DEG2RAD);
-  const startVelocity = pt(0, 1.5).rotate(angle);
+  const startVelocity = pt(0, 0.8).rotate(angle);
 
   const body = new DynamicBody(position.clone(), {
     startVelocity,
@@ -69,7 +69,7 @@ export function sleepyParticle(world: World, position: Point) {
 
   world.create().add(
     body,
-    FadeTransform(4),
+    FadeTransform(6),
     new Sprite((e) => {
       const { transparency, scale }: Sprite = e.get(Sprite);
       const alpha = sway(transparency, 2);

@@ -11,7 +11,7 @@ import { DARK_WOOD, LIGHT_WOOD, WHITE } from "../utils/SpriteUtils";
 import { Timeout } from "../utils/TimeUtils";
 import { drawShadow } from "./foal";
 
-const GRAB_DISTANCE = 65;
+export const GRAB_DISTANCE = 65;
 const size = pt(20, 180);
 const armAngle = 70; // degrees
 const armLength = 80;

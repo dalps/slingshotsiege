@@ -30,6 +30,7 @@ import {
   spawnFoals,
   WraithMotion,
   TargetingSystem,
+  CursorSystem,
 } from "./engine/systems";
 import { drawShadow } from "./entities/foal";
 import { drawSlingshotFrame, SlingshotFrame } from "./entities/slingshot";
@@ -168,6 +169,7 @@ const pipeline = [
   new RainbowSystem(world),
   new FiredProjectileSystem(world),
   new Render(world),
+  new CursorSystem(world),
   gameCycle,
 ];
 

@@ -3,7 +3,11 @@ import { drawBat, FLAP_INTERVAL, wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
 import { drawFoal, trembleTransform } from "../entities/foal";
 import { drawRainbow } from "../entities/rainbow";
-import { drawFarGoneWeapon, SlingshotFrame } from "../entities/slingshot";
+import {
+  drawFarGoneWeapon,
+  GRAB_DISTANCE,
+  SlingshotFrame,
+} from "../entities/slingshot";
 import { gameCycle } from "../main";
 import { drawText } from "../utils/CanvasUtils";
 import {
@@ -25,7 +29,7 @@ import {
   PASTEL_RAINBOW,
   RED,
   WHITE,
-  YELLOW,
+  YELLOW
 } from "../utils/SpriteUtils";
 import {
   AsyncTimeout,
@@ -198,15 +202,18 @@ export class DamageSystem {
 
           // todo: display carcass sprite
 
+          // Make unicorn mom cry for a bit
           this.unicorn.iterate(
             (e, unicornData: Unicorn, unicornBody: DynamicBody) => {
               waterParticles(this.world, unicornBody, unicornData);
 
               unicornData.expression = UnicornEmotion.Anguished;
-              this.world.query(Prey).length > 0 &&
-                Timeout(this.world, 1, () => {
-                  unicornData.expression = UnicornEmotion.Furious;
-                });
+
+              Timeout(this.world, 1, () => {
+                // Game could have ended in the meantime, if so don't set the emote.
+                gameCycle.gameState === GameState.Ongoing &&
+                  (unicornData.expression = UnicornEmotion.Furious);
+              });
             },
           );
         }
@@ -572,11 +579,18 @@ export class GameCycle {
 
     await AsyncTimeout(this.world, 2);
 
-    drawText("Tap to retry", pt(centerX, ch * 0.85), {
-      size: 24,
-    });
+    const tapToRetry = swellingText(
+      this.world,
+      "Tap to retry",
+      pt(centerX, ch * 0.85),
+      24,
+      28,
+    );
 
-    ui.onclick = ui.ontouchend = this.startSiege.bind(this);
+    ui.onclick = ui.ontouchend = () => {
+      tapToRetry.delete();
+      this.startSiege();
+    };
   }
 
   playSong(song: number[][], loop = true) {
@@ -643,7 +657,11 @@ export class GameCycle {
       size: 64,
     });
 
-    drawText("Tap to play", pt(Stage.cw / 2, Stage.ch * 0.7));
+    const tapToStart = swellingText(
+      this.world,
+      "Tap to play",
+      pt(Stage.cw / 2, Stage.ch * 0.7),
+    );
 
     drawText(
       "Made by dalps for js13k 2026",
@@ -653,6 +671,8 @@ export class GameCycle {
 
     ui.onclick = ui.ontouchend = async () => {
       ui.onclick = ui.ontouchend = null;
+
+      tapToStart.delete();
 
       Stage.clearLayer(LayerName.UI);
 
@@ -729,6 +749,36 @@ export class ReloadSystem {
   }
 }
 
+export class CursorSystem {
+  slingshot: Query;
+  handle: Query;
+
+  constructor(world: World) {
+    this.slingshot = world.query(SlingshotFrame);
+    this.handle = world.query(DragInput);
+  }
+
+  update(dt: number) {
+    this.slingshot.iterate((s, frame: SlingshotFrame) => {
+      this.handle.iterate((h, input: DragInput) => {
+        if (!input.pointerPos) return;
+
+        const uiLayer = Stage.getLayer(LayerName.UI)!;
+
+        if (input.dragPos && frame.grabPos) {
+          uiLayer.canvas.style.cursor = "grabbing";
+          return;
+        }
+
+        const inGrabArea =
+          input.pointerPos.distance(frame.midpoint) < GRAB_DISTANCE;
+
+        uiLayer.canvas.style.cursor = inGrabArea ? "grab" : "default";
+      });
+    });
+  }
+}
+
 export function getFoalPositions(): Point[] {
   const { cw, ch } = Stage.setActiveLayer(LayerName.Game);
   const width = 0.9;
@@ -745,7 +795,7 @@ export function spawnFoals(world: World) {
         new Prey(),
         new DynamicBody(x),
         new Sprite(drawFoal),
-        new Exhaust(world, 1, () => sleepyParticle(world, x.add(pt(-30)))),
+        new Exhaust(world, 0.5, () => sleepyParticle(world, x.add(pt(-30)))),
       ),
   );
 }
@@ -851,7 +901,7 @@ export function spawnBat(world: World) {
     startVelocity: pt(rand(0, 10), 0).rotate(Math.random() * Math.PI * 2),
   });
 
-  zzfxP(sfx.spawn);
+  zzfxP(sfx.bat);
 
   const batData = new Bat();
   const magnitude = 52;
@@ -902,4 +952,36 @@ const durationFn = () =>
   rand(
     0.5,
     clamp(1, 2, lerp(2, 1, gameCycle.score.get(Score).totalScore / 60_000)),
+  );
+
+const swelling = new Transform({
+  duration: 2,
+  // end(e) {},
+  update(e, t) {
+    const sprite: Sprite = e.get(Sprite);
+    // sprite.transparency = Math.ceil(Math.cos(t * Math.PI));
+    sprite.scale = t;
+  },
+});
+
+swelling.transformer.next = swelling.transformer;
+
+const swellingText = (
+  world: World,
+  text: string,
+  position: Point,
+  startSize = 30,
+  endsize = 36,
+) =>
+  world.create().add(
+    new Sprite((e) => {
+      const { transparency, scale }: Sprite = e.get(Sprite);
+      drawText(text, position, {
+        fill: WHITE.toAlpha(transparency),
+        stroke: BLACK.toAlpha(transparency),
+        size: lerp(startSize, endsize, sway(scale, 2)),
+        layer: LayerName.Scores,
+      });
+    }),
+    swelling,
   );
