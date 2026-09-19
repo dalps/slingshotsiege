@@ -40,6 +40,7 @@ import {
 } from "../utils/TimeUtils";
 import {
   Bat,
+  Blood,
   DragInput,
   Exhaust,
   Foal,
@@ -632,7 +633,7 @@ export class GameCycle {
     this.createSpawners();
 
     // Clean up carcasses and enemies
-    this.killAll(Foal, Bat, Wraith);
+    this.killAll(Foal, Bat, Wraith, Blood);
 
     // Recreate foals and restore health
     this.preys.length <= 0 && spawnFoals(this.world);

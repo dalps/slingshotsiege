@@ -1,6 +1,7 @@
 import ecs from "./ecs";
 import {
   Bat,
+  Blood,
   DragInput,
   Exhaust,
   Foal,
@@ -70,6 +71,7 @@ registerComponents(
   Unicorn,
   Transform,
   Sprite,
+  Blood,
   Foal,
   Wraith,
   Bat,

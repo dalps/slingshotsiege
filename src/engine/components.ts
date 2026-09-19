@@ -249,6 +249,8 @@ export const enum GameState {
 
 export class Frozen {}
 
+export class Blood {}
+
 export class Exhaust {
   particleEmitter: Entity | null;
 

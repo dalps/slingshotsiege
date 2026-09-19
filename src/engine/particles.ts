@@ -5,7 +5,7 @@ import { Point, pt } from "../utils/Point";
 import { BLACK, WHITE } from "../utils/SpriteUtils";
 import { Interval, Transform, type Transformer } from "../utils/TimeUtils";
 import { rgb } from "./color";
-import { Sprite, Unicorn, UNICORN_EYES } from "./components";
+import { Blood, Sprite, Unicorn, UNICORN_EYES } from "./components";
 import { DynamicBody, GRAVITY } from "./Physics2D";
 import { LayerName, Stage } from "./Stage";
 
@@ -40,9 +40,25 @@ export function bloodParticles(world: World, position: Point) {
     });
     body.addForce(GRAVITY);
 
+    const r = rand(5, 10);
+    const fade = FadeTransform();
+    fade.transformer.end = (e: Entity) => {
+      const { position }: DynamicBody = e.get(DynamicBody);
+      e.remove(DynamicBody).add(
+        new Sprite(() => {
+          Stage.drawOnLayer(LayerName.Particles, (ctx) => {
+            ctx.beginPath();
+            ctx.ellipse(position.x, position.y, r, r / 3, 0, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.fillStyle = color.toAlpha(0.5);
+            ctx.fill();
+          });
+        }),
+      );
+    };
     world
       .create()
-      .add(body, FadeTransform(), new Sprite((e) => drawCircle(e, 10, color)));
+      .add(body, fade, new Blood(), new Sprite((e) => drawCircle(e, r, color, LayerName.Game)));
   }
 }
 
@@ -119,12 +135,17 @@ export function waterParticles(
   return emitter;
 }
 
-export function drawCircle(e: Entity, radius: number, color = rgb(1, 1, 1)) {
+export function drawCircle(
+  e: Entity,
+  radius: number,
+  color = rgb(1, 1, 1),
+  layer = LayerName.Particles,
+) {
   const sprite: Sprite = e.get(Sprite);
   const b: DynamicBody = e.get(DynamicBody);
   const { position: p } = b;
 
-  const { ctx } = Stage.setActiveLayer(LayerName.Game);
+  const { ctx } = Stage.setActiveLayer(layer);
 
   ctx.beginPath();
   ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
