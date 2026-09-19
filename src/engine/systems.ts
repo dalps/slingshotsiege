@@ -1,7 +1,7 @@
 import { World, type Entity, type Query } from "../ecs";
 import { drawBat, FLAP_INTERVAL, wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
-import { drawFoal, trembleTransform } from "../entities/foal";
+import { drawCarcass, drawFoal, trembleTransform } from "../entities/foal";
 import { drawRainbow } from "../entities/rainbow";
 import {
   drawFarGoneWeapon,
@@ -103,7 +103,7 @@ export class TargetingSystem {
         return;
       }
 
-      if (hunter.target?.exists) {
+      if (hunter.target?.exists && hunter.target.get(Prey)) {
         // Just update the distance to the target
         hunter.distance = hunterBody.position.distance(
           hunter.target.get(DynamicBody).position,
@@ -194,7 +194,10 @@ export class DamageSystem {
 
         if (health.lives <= 0) {
           zzfxP(sfx.death);
-          preyEntity.delete();
+          preyEntity.remove(Prey, Health, Exhaust).add(new Sprite(drawCarcass));
+          hunter.target = null;
+
+          // todo: display carcass sprite
 
           if (this.bounties.length <= 1) {
             gameCycle.playSong(themeSong2);

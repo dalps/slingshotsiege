@@ -23,8 +23,7 @@ export function generateSprites() {
     o += getParts("rainbowFace");
     o += getParts("bricks");
     o += getParts("tower");
-
-    o = o.replaceAll(`rgb(0, 0, 0)`, "BLACK");
+    o += getParts("carcass");
 
     console.log(o);
 
@@ -62,8 +61,12 @@ export function parsePaths(groupLabel: string): Record<string, DrawingPart> {
 
       obj[key] = { path, fill: replaceUrl(fill), stroke: replaceUrl(stroke) };
 
-      function replaceUrl(prop): string | string[] | undefined {
-        return prop.includes("url") ? "RAINBOW" : prop;
+      function replaceUrl(prop: string): string | string[] | undefined {
+        return prop.includes("url")
+          ? "RAINBOW"
+          : prop
+              .replaceAll(`rgb(0, 0, 0)`, "BLACK")
+              .replaceAll(`rgb(255, 255, 255)`, "WHITE");
       }
     });
 
