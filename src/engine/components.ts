@@ -235,6 +235,12 @@ export class Unicorn {
   }
 }
 
+export class Foal {
+  /** Used to identify the foal when resizing the canvas. */
+
+  constructor(public index: number) {}
+}
+
 export const enum GameState {
   Title,
   Ongoing,

@@ -3,6 +3,7 @@ import {
   Bat,
   DragInput,
   Exhaust,
+  Foal,
   Frozen,
   Health,
   Hunter,
@@ -69,6 +70,7 @@ registerComponents(
   Unicorn,
   Transform,
   Sprite,
+  Foal,
   Wraith,
   Bat,
 );
@@ -83,22 +85,23 @@ function init() {
   initGradients();
 
   const slingshot = world.create().add(new SlingshotFrame(world));
-  const foals = spawnFoals(world);
+  spawnFoals(world);
 
-  Stage.addResizeListener(
-    () => (
-      Castle.draw(),
-      (slingshot.get(SlingshotFrame) as SlingshotFrame).setupCord(),
-      drawSlingshotFrame(slingshot),
-      getFoalPositions().forEach(
-        (p, idx) => (
-          foals[idx].exists &&
-            (foals[idx].get(DynamicBody) as DynamicBody).position.copy(p),
-          drawShadow(p.add(pt(0, 20)))
-        ),
-      )
-    ),
-  );
+  Stage.addResizeListener(() => {
+    Castle.draw();
+    (slingshot.get(SlingshotFrame) as SlingshotFrame).setupCord();
+    drawSlingshotFrame(slingshot);
+    // Not very robust since foals are deleted
+
+    const ps = getFoalPositions();
+    world
+      .query(Foal, DynamicBody)
+      .iterate((e, { index }: Foal, foalBody: DynamicBody) => {
+        const p = ps[index];
+        foalBody.position.copy(p);
+        drawShadow(p.add(pt(0, 20)));
+      });
+  });
 
   // Force a resize before drawing the title
   // window.resizeTo(Stage.cw, Stage.ch);

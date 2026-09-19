@@ -42,6 +42,7 @@ import {
   Bat,
   DragInput,
   Exhaust,
+  Foal,
   Frozen,
   GAME_TITLE,
   GameState,
@@ -202,8 +203,6 @@ export class DamageSystem {
           if (this.bounties.length <= 1) {
             gameCycle.playSong(themeSong2);
           }
-
-          // todo: display carcass sprite
 
           // Make unicorn mom cry for a bit
           this.unicorn.iterate(
@@ -632,6 +631,9 @@ export class GameCycle {
     // Setup spawners
     this.createSpawners();
 
+    // Clean up carcasses and enemies
+    this.killAll(Foal, Bat, Wraith);
+
     // Recreate foals and restore health
     this.preys.length <= 0 && spawnFoals(this.world);
     this.preys.iterate((e) => e.add(new Health()));
@@ -647,6 +649,10 @@ export class GameCycle {
     // ...
 
     this.gameState = GameState.Ongoing;
+  }
+
+  killAll(...classes: any[]) {
+    classes.forEach((C) => this.world.query(C).iterate((e) => e.delete()));
   }
 
   title() {
@@ -791,7 +797,7 @@ export function getFoalPositions(): Point[] {
 }
 
 export function spawnFoals(world: World) {
-  return getFoalPositions().map((x) =>
+  return getFoalPositions().map((x, idx) =>
     world
       .create()
       .add(
@@ -799,6 +805,7 @@ export function spawnFoals(world: World) {
         new DynamicBody(x),
         new Sprite(drawFoal),
         new Exhaust(world, 0.5, () => sleepyParticle(world, x.add(pt(-30)))),
+        new Foal(idx),
       ),
   );
 }
