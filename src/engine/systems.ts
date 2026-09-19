@@ -1,7 +1,12 @@
 import { World, type Entity, type Query } from "../ecs";
 import { drawBat, FLAP_INTERVAL, wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
-import { drawCarcass, drawFoal, trembleTransform } from "../entities/foal";
+import {
+  goToHeaven,
+  drawCarcass,
+  drawFoal,
+  trembleTransform,
+} from "../entities/foal";
 import { drawRainbow } from "../entities/rainbow";
 import {
   drawFarGoneWeapon,
@@ -29,7 +34,7 @@ import {
   PASTEL_RAINBOW,
   RED,
   WHITE,
-  YELLOW
+  YELLOW,
 } from "../utils/SpriteUtils";
 import {
   AsyncTimeout,
@@ -197,7 +202,7 @@ export class DamageSystem {
         if (health.lives <= 0) {
           zzfxP(sfx.death);
           preyEntity.remove(Prey, Health, Exhaust).add(new Sprite(drawCarcass));
-          hunter.target = null;
+          goToHeaven(this.world, preyEntity);
 
           // todo: display carcass sprite
 

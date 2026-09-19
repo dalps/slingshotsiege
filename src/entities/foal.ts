@@ -1,13 +1,14 @@
-import type { Entity } from "../ecs";
+import type { Entity, World } from "../ecs";
 import { Health, Sprite, START_LIVES } from "../engine/components";
+import { FadeTransform } from "../engine/particles";
 import { DynamicBody } from "../engine/Physics2D";
 import { LayerName, Stage } from "../engine/Stage";
 import { makeGradient } from "../utils/CanvasUtils";
-import { distribute } from "../utils/MathUtils";
+import { distribute, lerp, pickRandom, sway } from "../utils/MathUtils";
 import { Point, pt } from "../utils/Point";
 import { BLACK, drawParts, GRAY4, GRAY6, PINK } from "../utils/SpriteUtils";
 import type { Transformer } from "../utils/TimeUtils";
-import { carcass, foal, life } from "./sprites";
+import { angel, carcass, foal, life } from "./sprites";
 
 export const trembleTransform: Transformer = {
   duration: 0.2,
@@ -58,6 +59,35 @@ export function drawFoal(e: Entity) {
           idx + 1 <= health.lives ? [BLACK, PINK] : [GRAY6, GRAY4],
         ),
       );
+  });
+}
+
+export function goToHeaven(world: World, foal: Entity) {
+  const { position }: DynamicBody = foal.get(DynamicBody);
+  const direction = pickRandom(1, -1);
+
+  world
+    .create()
+    .add(
+      new DynamicBody(position.clone(), { startVelocity: pt(0, -10) }),
+      FadeTransform(1),
+      new Sprite((e) => drawAngel(e, direction)),
+    );
+}
+
+export function drawAngel(e: Entity, direction: number) {
+  Stage.drawOnLayer(LayerName.Particles, (ctx) => {
+    const foalBody: DynamicBody = e.get(DynamicBody);
+    const { transparency }: Sprite = e.get(Sprite);
+    const { position } = foalBody;
+
+    const width = 20 * direction;
+    const offset = lerp(-width, width, sway(transparency, 2));
+    ctx.translate(position.x + offset, position.y);
+    ctx.globalAlpha = transparency;
+
+    drawParts(ctx, foal);
+    drawParts(ctx, angel);
   });
 }
 

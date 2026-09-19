@@ -57,7 +57,7 @@ export function initGradients() {
   );
 }
 
-export function drawParts(ctx: CanvasRenderingContext2D, parts: Drawing) {
+export function drawParts(ctx: CanvasRenderingContext2D, parts: Drawing, lineWidth = 2) {
   parts.forEach(([path, fill, stroke]) => {
     const get = (v: any) => (typeof v === "function" ? v() : v);
 
@@ -67,7 +67,7 @@ export function drawParts(ctx: CanvasRenderingContext2D, parts: Drawing) {
     }
     if (stroke) {
       ctx.lineCap = "round";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = lineWidth;
       ctx.strokeStyle = get(stroke);
       ctx.stroke(path);
     }

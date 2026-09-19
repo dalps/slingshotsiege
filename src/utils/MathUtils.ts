@@ -15,14 +15,14 @@ export const easeOut = (t: number) => Math.sin((t * Math.PI) / 2);
 export const easeInOut = (t: number) =>
   Math.cos(t * Math.PI + Math.PI) / 2 + 0.5;
 
-/** 
+/**
  * Smoothly oscillates between 0 and 1 for `iterations` times.
  * The curve lands at y=0 with an even number of iterations, and at y=1 with an odd number.
  */
 export const sway = (t: number, iterations = 5) =>
   Math.cos(t * iterations * PI - PI) * 0.5 + 0.5;
 
-/** 
+/**
  * Bounces between 0 and `height` for `period` times.
  */
 export const bounce = (t: number, period = 10, height = 5) =>
@@ -30,7 +30,7 @@ export const bounce = (t: number, period = 10, height = 5) =>
 
 export const rand = (min: number, max: number) => lerp(min, max, Math.random());
 
-export function pickRandom(options: any[]): any {
+export function pickRandom(...options: any[]): any {
   return options[Math.floor(Math.random() * options.length)];
 }
 

@@ -24,8 +24,9 @@ export function generateSprites() {
     o += getParts("bricks");
     o += getParts("tower");
     o += getParts("carcass");
+    o += getParts("angel");
 
-    console.log(o);
+    // console.log(o);
 
     document.querySelector("svg")?.remove();
   }
