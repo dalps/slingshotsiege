@@ -86,7 +86,7 @@ import {
   themeSong2,
 } from "./sfx";
 import { LayerName, Stage } from "./Stage";
-import { zzfxP } from "./zzfx";
+import { zzfxP, zzfxR, zzfxX } from "./zzfx";
 
 const BAT_INTERVAL = 10;
 const FIRST_KILL_POINTS = 100;
@@ -453,6 +453,8 @@ export class GameCycle {
   currentSong: AudioBufferSourceNode | null = null;
   wave = 0;
 
+  gainNode: GainNode;
+
   constructor(public world: World) {
     this.preys = world.query(Prey);
     this.spawners = world.query(Spawner);
@@ -461,6 +463,9 @@ export class GameCycle {
     this.score = this.world.create().add(new Score());
 
     this.gameState = GameState.Title;
+
+    this.gainNode = zzfxX.createGain();
+    this.gainNode.connect(zzfxX.destination);
   }
 
   update(dt: number) {
@@ -537,7 +542,7 @@ export class GameCycle {
 
     // Hide the corner score
     this.score.remove(Sprite);
-    this.currentSong = zzfxP(...gameOverSong);
+    this.playSong(gameOverSong, false);
     const centerX = cw / 2;
     drawText("I failed you, children...", pt(centerX, ch * 0.15));
 
@@ -598,6 +603,20 @@ export class GameCycle {
     ui.onclick = ui.ontouchend = async () => {
       tapToRetry.delete();
       ui.onclick = null;
+      if (this.currentSong) {
+        this.world.create().add(
+          new Transform({
+            duration: 1,
+            end: (e) => {
+              this.currentSong?.stop();
+              e.delete();
+            },
+            update: (e, stage) => {
+              this.gainNode.gain.setValueAtTime(1 - stage, 0);
+            },
+          }),
+        );
+      }
       await FadeTransition(this.world);
       this.startSiege();
     };
@@ -605,19 +624,27 @@ export class GameCycle {
 
   playSong(song: number[][], loop = true) {
     this.currentSong?.stop();
-    this.currentSong = zzfxP(...song);
+
+    // Adapted from zzfxP's code
+    let makeSourceNode = (...t) => {
+      let e = zzfxX.createBufferSource(),
+        f = zzfxX.createBuffer(t.length, t[0].length, zzfxR);
+      t.map((d, i) => f.getChannelData(i).set(d));
+      e.buffer = f;
+      return e;
+    };
+    const node = makeSourceNode(...song);
+
+    node.connect(this.gainNode);
+    this.gainNode.gain.setValueAtTime(1, 0); // reset gain
+    this.currentSong = node;
     this.currentSong.loop = loop;
+    this.currentSong.start();
   }
 
   async startSiege(first = false) {
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
-
-    Stage.clearLayer(LayerName.UI);
-    const { canvas: ui } = Stage.getLayer(LayerName.UI)!;
-    ui.onclick = null;
-
-    this.playSong(themeSong1);
 
     const scoreData: Score = this.score.get(Score);
 
@@ -647,7 +674,10 @@ export class GameCycle {
     });
 
     // Wait for transition...
-    !first && (await ConeTransition(this.world, { endRadius: Stage.cw }));
+    !first &&
+      (await ConeTransition(this.world, {
+        endRadius: Math.max(Stage.cw, Stage.ch) * 0.75,
+      }));
 
     this.playSong(themeSong1);
 
@@ -706,7 +736,7 @@ export class GameCycle {
         await this.playIntro();
       }
 
-      this.startSiege();
+      this.startSiege(true);
     };
   }
 

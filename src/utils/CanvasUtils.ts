@@ -1,8 +1,7 @@
 import type { World } from "../ecs";
 import { LayerName, Stage } from "../engine/Stage";
 import { Color } from "../engine/color";
-import { FadeTransform } from "../engine/particles";
-import { easeInOut, easeOut, lerp } from "../utils/MathUtils";
+import { easeInOut, lerp } from "../utils/MathUtils";
 import { Point, pt } from "./Point";
 import { BLACK, WHITE } from "./SpriteUtils";
 import { Transform } from "./TimeUtils";
@@ -112,7 +111,7 @@ function helper(
 
 export const FadeTransition = (
   world: World,
-  { start = 0, end = 1, duration = 2, targetColor = BLACK } = {},
+  { start = 0, end = 1, duration = 1, targetColor = BLACK } = {},
 ) =>
   helper(world, duration, (t, ctx, cw, ch) => {
     ctx.clearRect(0, 0, cw, ch);
@@ -122,7 +121,7 @@ export const FadeTransition = (
 
 export const ConeTransition = (
   world: World,
-  { startRadius = 0, endRadius = 100, duration = 3, ease = easeOut } = {},
+  { startRadius = 0, endRadius = 100, duration = 2, ease = easeInOut } = {},
 ) =>
   helper(world, duration, (t, ctx, cw, ch) => {
     ctx.clearRect(0, 0, cw, ch);
