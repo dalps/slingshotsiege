@@ -14,7 +14,7 @@ import {
   SlingshotFrame,
 } from "../entities/slingshot";
 import { gameCycle } from "../main";
-import { drawText } from "../utils/CanvasUtils";
+import { ConeTransition, drawText, FadeTransition } from "../utils/CanvasUtils";
 import {
   bounce,
   clamp,
@@ -595,8 +595,10 @@ export class GameCycle {
       28,
     );
 
-    ui.onclick = ui.ontouchend = () => {
+    ui.onclick = ui.ontouchend = async () => {
       tapToRetry.delete();
+      ui.onclick = null;
+      await FadeTransition(this.world);
       this.startSiege();
     };
   }
@@ -607,7 +609,7 @@ export class GameCycle {
     this.currentSong.loop = loop;
   }
 
-  startSiege() {
+  async startSiege(first = false) {
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
 
@@ -631,25 +633,29 @@ export class GameCycle {
       ),
     );
 
-    // Setup slingshot controls
-    slingshotData.addDragInput();
-
-    // Setup spawners
-    this.createSpawners();
-
     // Clean up carcasses and enemies
     this.killAll(Foal, Bat, Wraith, Blood);
+    this.tearEmitter?.exists?.delete();
 
     // Recreate foals and restore health
     this.preys.length <= 0 && spawnFoals(this.world);
     this.preys.iterate((e) => e.add(new Health()));
 
-    this.tearEmitter?.exists?.delete();
-
     // Make mom angry
     this.unicorns.iterate((e, unicornData: Unicorn) => {
       unicornData.getPissed();
     });
+
+    // Wait for transition...
+    !first && (await ConeTransition(this.world, { endRadius: Stage.cw }));
+
+    this.playSong(themeSong1);
+
+    // Setup slingshot controls
+    slingshotData.addDragInput();
+
+    // Setup spawners
+    this.createSpawners();
 
     // Animate sky
     // ...

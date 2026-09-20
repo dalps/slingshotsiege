@@ -1,8 +1,11 @@
+import type { World } from "../ecs";
 import { LayerName, Stage } from "../engine/Stage";
 import { Color } from "../engine/color";
-import { lerp } from "../utils/MathUtils";
+import { FadeTransform } from "../engine/particles";
+import { easeInOut, easeOut, lerp } from "../utils/MathUtils";
 import { Point, pt } from "./Point";
 import { BLACK, WHITE } from "./SpriteUtils";
+import { Transform } from "./TimeUtils";
 
 export function drawText(
   text: string,
@@ -84,3 +87,54 @@ export function circle(p: Point, r: number = 5, color = "blue") {
   ctx.fillStyle = color;
   ctx.fill();
 }
+
+function helper(
+  world: World,
+  duration: number,
+  drawFn: (stage: number, ctx, cw, ch) => void,
+  layer = LayerName.UI,
+) {
+  return new Promise((resolve) => {
+    world.create().add(
+      new Transform({
+        duration,
+        end(e) {
+          e.delete();
+          resolve(null);
+        },
+        update(e, t) {
+          Stage.drawOnLayer(layer, (...args) => drawFn(t, ...args));
+        },
+      }),
+    );
+  });
+}
+
+export const FadeTransition = (
+  world: World,
+  { start = 0, end = 1, duration = 2, targetColor = BLACK } = {},
+) =>
+  helper(world, duration, (t, ctx, cw, ch) => {
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.fillStyle = targetColor.toAlpha(lerp(start, end, t));
+    ctx.fillRect(0, 0, cw, ch);
+  });
+
+export const ConeTransition = (
+  world: World,
+  { startRadius = 0, endRadius = 100, duration = 3, ease = easeOut } = {},
+) =>
+  helper(world, duration, (t, ctx, cw, ch) => {
+    ctx.clearRect(0, 0, cw, ch);
+
+    const r = lerp(startRadius, endRadius, ease(t));
+    ctx.beginPath();
+    ctx.rect(0, 0, cw, ch);
+    ctx.arc(cw / 2, ch / 2, r, 0, Math.PI * 2, true); // counterclockwise
+
+    // ctx.ellipse(cw / 2, ch / 2, t, t, 0, 0, Math.PI * 2, true); // counterclockwise
+    // ctx.clip(clipPath);
+
+    ctx.fillStyle = BLACK;
+    ctx.fill();
+  });
