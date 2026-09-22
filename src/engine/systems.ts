@@ -2,9 +2,9 @@ import { World, type Entity, type Query } from "../ecs";
 import { drawBat, FLAP_INTERVAL, wingFlap } from "../entities/bat";
 import { drawEnemy } from "../entities/enemy";
 import {
-  goToHeaven,
   drawCarcass,
   drawFoal,
+  goToHeaven,
   trembleTransform,
 } from "../entities/foal";
 import { drawRainbow } from "../entities/rainbow";
@@ -31,6 +31,7 @@ import {
 import { Point, pt } from "../utils/Point";
 import {
   BLACK,
+  GRAYc,
   PASTEL_RAINBOW,
   RED,
   WHITE,
@@ -91,6 +92,8 @@ import { zzfxP, zzfxR, zzfxX } from "./zzfx";
 const BAT_INTERVAL = 10;
 const FIRST_KILL_POINTS = 100;
 const DAMAGE_RADIUS = 40;
+
+const pauseBtn: HTMLButtonElement = document.querySelector("#pause")!;
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -261,7 +264,7 @@ export class RainbowSystem {
         explosionParticles(this.world, rainbowBody.position, WHITE);
         r.delete();
 
-        // Doesn't increase the score
+        // Note: killing the fairy doesn't increase the score
 
         this.world.query(Unicorn).iterate((e, unicorn: Unicorn) => {
           ((unicorn.expression = UnicornEmotion.Content),
@@ -467,6 +470,12 @@ export class GameCycle {
 
     this.gainNode = zzfxX.createGain();
     this.gainNode.connect(zzfxX.destination);
+
+    pauseBtn.addEventListener("click", () => this.pause());
+    window.addEventListener(
+      "keydown",
+      (e) => e.key === "Escape" && this.pause(),
+    );
   }
 
   update(dt: number) {
@@ -504,6 +513,8 @@ export class GameCycle {
   }
 
   async gameOver() {
+    pauseBtn.hidden = true;
+
     this.gameState = GameState.Over;
     this.currentSong?.stop();
 
@@ -642,6 +653,18 @@ export class GameCycle {
     this.currentSong.start();
   }
 
+  pauseSong() {
+    if (!this.currentSong) return;
+
+    this.currentSong.playbackRate.setValueAtTime(0, 0);
+  }
+
+  resumeSong() {
+    if (!this.currentSong) return;
+
+    this.currentSong.playbackRate.setValueAtTime(1, 0);
+  }
+
   async startSiege(first = false) {
     const [slingshotEntity, slingshotData]: [Entity, SlingshotFrame] =
       this.slingshot.first()!;
@@ -690,7 +713,47 @@ export class GameCycle {
     // Animate sky
     // ...
 
+    pauseBtn.hidden = false;
+
     this.gameState = GameState.Ongoing;
+  }
+
+  pause() {
+    switch (this.gameState) {
+      // Pause
+      case GameState.Ongoing:
+        this.gameState = GameState.Paused;
+
+        pauseBtn.hidden = true;
+        this.pauseSong();
+        Stage.drawOnLayer(LayerName.UI, (ctx, cw, ch) => {
+          ctx.fillStyle = BLACK.toAlpha(0.5);
+          ctx.fillRect(0, 0, cw, ch);
+        });
+        drawText("PAUSED", pt(Stage.cw / 2, Stage.ch * 0.3), {size: 52, fill: GRAYc });
+        drawText(
+          "Tap or press ESC to resume",
+          pt(Stage.cw / 2, Stage.ch * 0.7),
+          {
+            size: 24,
+          },
+        );
+        break;
+
+      // Unpause
+      case GameState.Paused:
+        this.gameState = GameState.Ongoing;
+
+        pauseBtn.hidden = false;
+        this.resumeSong();
+        Stage.clearLayer(LayerName.UI);
+
+        break;
+
+      // Noop in any other state
+      default:
+        break;
+    }
   }
 
   killAll(...classes: any[]) {

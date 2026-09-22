@@ -6,6 +6,7 @@ import {
   Exhaust,
   Foal,
   Frozen,
+  GameState,
   Health,
   Hunter,
   Prey,
@@ -189,7 +190,9 @@ function loop(now: timestamp) {
     delta = 1000 / 60;
   }
 
-  world.update(pipeline, delta * TIME_SCALE);
+  gameCycle.gameState !== GameState.Paused &&
+    world.update(pipeline, delta * TIME_SCALE);
+
   requestAnimationFrame(loop);
 }
 

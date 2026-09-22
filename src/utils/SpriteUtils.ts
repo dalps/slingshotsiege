@@ -18,6 +18,7 @@ export const VIOLET = rgb(94, 50, 147);
 export const FUCHSIA = rgb(255, 37, 255);
 export const YELLOW = rgb(179, 255, 0);
 export const PINK = "#ff9ec5";
+export const GRAYc = "#ccc";
 export const GRAY6 = "#666";
 export const GRAY4 = "#444";
 export const DARK_WOOD = "#a96f3c";

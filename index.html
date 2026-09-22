@@ -30,10 +30,28 @@
       #stage > canvas {
         position: absolute;
       }
+
+      #pause {
+        position: absolute;
+        top:10px;
+        left: 10px;
+        aspect-ratio: 1;
+        background: rgba(136, 136, 136, 0.5);
+        color: white;
+        outline: none;
+        border: 2px solid #444;
+        font-size: 16px;
+        font-weight: 900;
+        padding: 5px;
+        z-index: 999;
+        border-radius: 5px;
+      }
     </style>
   </head>
   <body>
-    <div id="stage"></div>
+    <div id="stage">
+      <button id="pause" hidden>||</button>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
