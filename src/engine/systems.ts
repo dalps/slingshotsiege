@@ -90,6 +90,7 @@ import { zzfxP, zzfxR, zzfxX } from "./zzfx";
 
 const BAT_INTERVAL = 10;
 const FIRST_KILL_POINTS = 100;
+const DAMAGE_RADIUS = 40;
 
 /**
  * Selects a unicorn foal for each foe to prey on and directs the foe towards it.
@@ -182,7 +183,7 @@ export class DamageSystem {
 
   update() {
     this.hunters.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
-      if (hunter.target?.exists && hunter.distance! < 20) {
+      if (hunter.target?.exists && hunter.distance! < DAMAGE_RADIUS) {
         const preyEntity = hunter.target;
 
         const [preyData, health, preyBody]: [Prey, Health, DynamicBody] =
@@ -199,12 +200,11 @@ export class DamageSystem {
         zzfxP(sfx.damage);
         preyEntity.add(new Transform(trembleTransform));
 
+        // Kill the foal
         if (health.lives <= 0) {
           zzfxP(sfx.death);
           preyEntity.remove(Prey, Health, Exhaust).add(new Sprite(drawCarcass));
           goToHeaven(this.world, preyEntity);
-
-          // todo: display carcass sprite
 
           if (this.bounties.length <= 1) {
             gameCycle.playSong(themeSong2);
@@ -276,7 +276,8 @@ export class RainbowSystem {
         // Stop and disarm all foes
         this.hunter.iterate((h, hunter: Hunter, hunterBody: DynamicBody) => {
           hunterBody.velocity.set(0, 0);
-          h.remove(Hunter); // Disable weapon interaction
+          hunterBody.toggleFixed();
+          h.remove(Hunter, Transform); // Disable weapon interaction and animations
           h.add(new Frozen());
         });
 
@@ -535,8 +536,7 @@ export class GameCycle {
       },
     );
 
-    const ui = Stage.getLayer(LayerName.UI)!.canvas;
-    ui.onclick = null;
+    this.onclick = null;
 
     await AsyncTimeout(this.world, 2);
 
@@ -592,7 +592,7 @@ export class GameCycle {
 
     await AsyncTimeout(this.world, 2);
 
-    const tapToRetry = swellingText(
+    const tapToRetry = SwellingText(
       this.world,
       "Tap to retry",
       pt(centerX, ch * 0.85),
@@ -600,9 +600,9 @@ export class GameCycle {
       28,
     );
 
-    ui.onclick = ui.ontouchend = async () => {
+    this.onclick = async () => {
       tapToRetry.delete();
-      ui.onclick = null;
+      this.onclick = null;
       if (this.currentSong) {
         this.world.create().add(
           new Transform({
@@ -697,10 +697,13 @@ export class GameCycle {
     classes.forEach((C) => this.world.query(C).iterate((e) => e.delete()));
   }
 
+  set onclick(cb: Function | null) {
+    const ui = Stage.getLayer(LayerName.UI)!.canvas;
+    ui.onclick = ui.ontouchend = cb?.bind(this);
+  }
+
   title() {
     if (this.gameState !== GameState.Title) return;
-
-    const ui = Stage.getLayer(LayerName.UI)!.canvas;
 
     drawText(GAME_TITLE, pt(Stage.cw / 2, Stage.ch * 0.2), {
       fill: YELLOW,
@@ -708,7 +711,7 @@ export class GameCycle {
       size: 64,
     });
 
-    const tapToStart = swellingText(
+    const tapToStart = SwellingText(
       this.world,
       "Tap to play",
       pt(Stage.cw / 2, Stage.ch * 0.7),
@@ -720,8 +723,8 @@ export class GameCycle {
       { size: 16, fill: "#ccc" },
     );
 
-    ui.onclick = ui.ontouchend = async () => {
-      ui.onclick = ui.ontouchend = null;
+    this.onclick = async () => {
+      this.onclick = null;
 
       tapToStart.delete();
 
@@ -956,9 +959,9 @@ export function spawnBat(world: World) {
   zzfxP(sfx.bat);
 
   const batData = new Bat();
-  const magnitude = 52;
+  const magnitude = 50;
 
-  batData.velocityNoise = Interval(world, FLAP_INTERVAL, () => {
+  batData.flapInterval = Interval(world, FLAP_INTERVAL, () => {
     hunterBody.addForce(new ContactForce(pt(0, -1), magnitude, 1));
   });
 
@@ -1018,7 +1021,7 @@ const swelling = new Transform({
 
 swelling.transformer.next = swelling.transformer;
 
-const swellingText = (
+const SwellingText = (
   world: World,
   text: string,
   position: Point,

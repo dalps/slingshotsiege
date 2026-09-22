@@ -17,9 +17,10 @@ import { LayerName, Stage } from "./Stage";
 
 type DrawFn = (entity: Entity) => void;
 
+export const DEBUG = false;
 export const GAME_TITLE = "Slingshot Siege";
-export const START_LIVES = 3;
-export const START_SPEED = 50;
+export const START_LIVES = DEBUG ? 1 : 3;
+export const START_SPEED = DEBUG ? 500 : 50;
 export const RAINBOW_INTERVAL = 30;
 export const ENEMY_INTERVAL = 1;
 
@@ -301,9 +302,9 @@ export class Wraith {}
 
 export class Bat {
   wingAngle = 0;
-  velocityNoise: Entity | null = null;
+  flapInterval: Entity | null = null;
 
   destructor() {
-    this.velocityNoise?.exists?.delete();
+    this.flapInterval?.exists?.delete();
   }
 }
