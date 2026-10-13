@@ -3,6 +3,9 @@ genres:
   - tower-defense
   - strategy
   - action
+
+directors_cut: https://canvas-demos.dalp.io/demos/slingshotsiege/
+post: https://dalp.io/blog/js13k2026/
 # See github.com/js13kGames/hello-world for supported frontmatter
 ---
 
